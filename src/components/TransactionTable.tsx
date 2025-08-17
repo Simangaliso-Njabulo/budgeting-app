@@ -1,23 +1,8 @@
 // src/components/TransactionTable.tsx
 import { Edit2, Trash2, Save, X } from "lucide-react";
 import { useState } from "react";
-
-interface Transaction {
-  id: number;
-  item: string;
-  bucketId: string;
-  date: string;
-  amount: number;
-  balanceAfter: number;
-}
-
-interface Bucket {
-  id: string;
-  name: string;
-  allocated: number;
-  actual: number;
-  categoryId: string;
-}
+import ActionButton from "./ActionButton";
+import type { Bucket, Transaction } from "../types";
 
 interface TransactionTableProps {
   transactions: Transaction[];
@@ -70,45 +55,57 @@ const TransactionTable = ({
 
   return (
     <div
-      className={`rounded-lg shadow-md overflow-hidden ${
-        darkMode ? "bg-gray-800" : "bg-white"
+      className={`rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ${
+        darkMode
+          ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50"
+          : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"
       }`}
     >
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className={`${darkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+          <thead
+            className={`${
+              darkMode
+                ? "bg-gradient-to-r from-gray-700 to-gray-800"
+                : "bg-gradient-to-r from-gray-50 to-gray-100"
+            }`}
+          >
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                #
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Item
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Bucket
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Date
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Balance After
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Actions
-              </th>
+              {[
+                "#",
+                "Item",
+                "Bucket",
+                "Date",
+                "Amount",
+                "Balance After",
+                "Actions",
+              ].map((header) => (
+                <th
+                  key={header}
+                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
+                    darkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200/20">
             {transactions.map((transaction) => {
               const bucket = buckets.find((b) => b.id === transaction.bucketId);
               const isEditing = editingId === transaction.id;
 
               return (
-                <tr key={transaction.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <tr
+                  key={transaction.id}
+                  className="group hover:bg-black/5 transition-all duration-300"
+                >
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap text-sm font-medium ${
+                      darkMode ? "text-gray-400" : "text-gray-500"
+                    }`}
+                  >
                     {transaction.id}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -119,14 +116,18 @@ const TransactionTable = ({
                         onChange={(e) =>
                           setEditForm({ ...editForm, item: e.target.value })
                         }
-                        className={`p-1 border rounded text-sm w-full ${
+                        className={`p-2 border rounded-xl text-sm w-full transition-all duration-300 focus:ring-2 ${
                           darkMode
-                            ? "bg-gray-700 border-gray-600"
-                            : "bg-white border-gray-300"
+                            ? "bg-gray-700 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                            : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                         }`}
                       />
                     ) : (
-                      transaction.item
+                      <span
+                        className={darkMode ? "text-white" : "text-gray-900"}
+                      >
+                        {transaction.item}
+                      </span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -136,10 +137,10 @@ const TransactionTable = ({
                         onChange={(e) =>
                           setEditForm({ ...editForm, bucketId: e.target.value })
                         }
-                        className={`p-1 border rounded text-sm w-full ${
+                        className={`p-2 border rounded-xl text-sm w-full transition-all duration-300 focus:ring-2 ${
                           darkMode
-                            ? "bg-gray-700 border-gray-600"
-                            : "bg-white border-gray-300"
+                            ? "bg-gray-700 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                            : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                         }`}
                       >
                         {buckets.map((bucket) => (
@@ -149,13 +150,21 @@ const TransactionTable = ({
                         ))}
                       </select>
                     ) : (
-                      bucket?.name
+                      <span
+                        className={darkMode ? "text-gray-300" : "text-gray-600"}
+                      >
+                        {bucket?.name}
+                      </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      darkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
                     {transaction.date}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-red-600">
+                  <td className="px-6 py-4 whitespace-nowrap font-bold text-red-500">
                     {isEditing ? (
                       <input
                         type="number"
@@ -166,50 +175,62 @@ const TransactionTable = ({
                             amount: parseFloat(e.target.value) || 0,
                           })
                         }
-                        className={`p-1 border rounded text-sm w-full ${
+                        className={`p-2 border rounded-xl text-sm w-full transition-all duration-300 focus:ring-2 ${
                           darkMode
-                            ? "bg-gray-700 border-gray-600"
-                            : "bg-white border-gray-300"
+                            ? "bg-gray-700 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500"
+                            : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
                         }`}
                       />
                     ) : (
-                      `-${transaction.amount.toLocaleString()}`
+                      `-$${transaction.amount.toLocaleString()}`
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium">
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap font-medium ${
+                      darkMode ? "text-white" : "text-gray-900"
+                    }`}
+                  >
                     ${transaction.balanceAfter.toLocaleString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
+                    <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
                       {isEditing ? (
                         <>
-                          <button
+                          <ActionButton
                             onClick={saveEdit}
-                            className="text-green-500 hover:text-green-700 transition-colors"
+                            variant="success"
+                            size="sm"
+                            darkMode={darkMode}
                           >
                             <Save className="h-4 w-4" />
-                          </button>
-                          <button
+                          </ActionButton>
+                          <ActionButton
                             onClick={cancelEdit}
-                            className="text-gray-500 hover:text-gray-700 transition-colors"
+                            variant="secondary"
+                            size="sm"
+                            darkMode={darkMode}
                           >
                             <X className="h-4 w-4" />
-                          </button>
+                          </ActionButton>
                         </>
                       ) : (
                         <>
-                          <button
+                          <ActionButton
                             onClick={() => startEdit(transaction)}
-                            className="text-blue-500 hover:text-blue-700 transition-colors"
+                            variant="primary"
+                            size="sm"
+                            darkMode={darkMode}
                           >
                             <Edit2 className="h-4 w-4" />
-                          </button>
-                          <button
+                          </ActionButton>
+                          <ActionButton
                             onClick={() => onDelete(transaction.id)}
-                            className="text-red-500 hover:text-red-700 transition-colors"
+                            variant="danger"
+                            size="sm"
+                            darkMode={darkMode}
                           >
                             <Trash2 className="h-4 w-4" />
-                          </button>
+                          </ActionButton>
                         </>
                       )}
                     </div>

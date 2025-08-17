@@ -1,13 +1,7 @@
 // src/components/TransactionForm.tsx
-import { PlusCircle } from "lucide-react";
-
-interface Bucket {
-  id: string;
-  name: string;
-  allocated: number;
-  actual: number;
-  categoryId: string;
-}
+import { Plus } from "lucide-react";
+import ActionButton from "./ActionButton";
+import type { Bucket, Transaction } from "../types";
 
 interface TransactionFormProps {
   newTransaction: {
@@ -15,7 +9,7 @@ interface TransactionFormProps {
     bucketId: string;
     amount: number;
   };
-  setNewTransaction: (transaction: any) => void;
+  setNewTransaction: (transaction: Transaction) => void;
   buckets: Bucket[];
   onAdd: () => void;
   darkMode: boolean;
@@ -30,34 +24,54 @@ const TransactionForm = ({
 }: TransactionFormProps) => {
   return (
     <div
-      className={`p-6 rounded-lg shadow-md ${
-        darkMode ? "bg-gray-800" : "bg-white"
+      className={`rounded-2xl p-8 shadow-2xl transition-all duration-500 ${
+        darkMode
+          ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50"
+          : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"
       }`}
     >
-      <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
+      <h2
+        className={`text-xl font-bold mb-6 ${
+          darkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
+        Add New Transaction
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input
           type="text"
-          placeholder="Item Purchased"
+          placeholder="Transaction Item"
           value={newTransaction.item}
           onChange={(e) =>
-            setNewTransaction({ ...newTransaction, item: e.target.value })
+            setNewTransaction({
+              ...newTransaction,
+              item: e.target.value,
+              id: 0,
+              date: "",
+              balanceAfter: 0,
+            })
           }
-          className={`p-2 border rounded-md ${
+          className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
             darkMode
-              ? "bg-gray-700 border-gray-600"
-              : "bg-white border-gray-300"
+              ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-purple-500 focus:border-purple-500"
+              : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
           }`}
         />
         <select
           value={newTransaction.bucketId}
           onChange={(e) =>
-            setNewTransaction({ ...newTransaction, bucketId: e.target.value })
+            setNewTransaction({
+              ...newTransaction,
+              bucketId: e.target.value,
+              id: 0,
+              date: "",
+              balanceAfter: 0,
+            })
           }
-          className={`p-2 border rounded-md ${
+          className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
             darkMode
-              ? "bg-gray-700 border-gray-600"
-              : "bg-white border-gray-300"
+              ? "bg-gray-700 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500"
+              : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
           }`}
         >
           <option value="">Select Bucket</option>
@@ -75,21 +89,27 @@ const TransactionForm = ({
             setNewTransaction({
               ...newTransaction,
               amount: parseFloat(e.target.value) || 0,
+              id: 0,
+              date: "",
+              balanceAfter: 0,
             })
           }
-          className={`p-2 border rounded-md ${
+          className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
             darkMode
-              ? "bg-gray-700 border-gray-600"
-              : "bg-white border-gray-300"
+              ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-purple-500 focus:border-purple-500"
+              : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
           }`}
         />
-        <button
+        <ActionButton
           onClick={onAdd}
-          className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
+          variant="primary"
+          size="md"
+          darkMode={darkMode}
+          className="w-full justify-center flex items-center"
         >
-          <PlusCircle className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Transaction
-        </button>
+        </ActionButton>
       </div>
     </div>
   );

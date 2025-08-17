@@ -37,7 +37,7 @@ const Header = ({ darkMode, setDarkMode }: HeaderProps) => {
                   : "from-purple-600 to-blue-600"
               } bg-clip-text text-transparent`}
             >
-              Personal Budget Tracker
+              Personal Budget
             </h1>
           </div>
 

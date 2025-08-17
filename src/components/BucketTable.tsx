@@ -1,24 +1,12 @@
 // src/components/BucketTable.tsx
 import { Trash2 } from "lucide-react";
-
-interface Bucket {
-  id: string;
-  name: string;
-  allocated: number;
-  actual: number;
-  categoryId: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  color: string;
-}
+import ActionButton from "./ActionButton";
+import type { Bucket, Category, Income } from "../types";
 
 interface BucketTableProps {
   buckets: Bucket[];
   categories: Category[];
-  income: { amount: number; savings: number };
+  income: Income;
   onDelete: (id: string) => void;
   darkMode: boolean;
 }
@@ -32,38 +20,43 @@ const BucketTable = ({
 }: BucketTableProps) => {
   return (
     <div
-      className={`rounded-lg shadow-md overflow-hidden ${
-        darkMode ? "bg-gray-800" : "bg-white"
+      className={`rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ${
+        darkMode
+          ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50"
+          : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"
       }`}
     >
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className={`${darkMode ? "bg-gray-700" : "bg-gray-50"}`}>
+          <thead
+            className={`${
+              darkMode
+                ? "bg-gradient-to-r from-gray-700 to-gray-800"
+                : "bg-gradient-to-r from-gray-50 to-gray-100"
+            }`}
+          >
             <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Name
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Allocated
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Actual
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Difference
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                % of Income
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Category
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                Actions
-              </th>
+              {[
+                "Name",
+                "Allocated",
+                "Actual",
+                "Difference",
+                "% of Income",
+                "Category",
+                "Actions",
+              ].map((header) => (
+                <th
+                  key={header}
+                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
+                    darkMode ? "text-gray-300" : "text-gray-700"
+                  }`}
+                >
+                  {header}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="divide-y divide-gray-200/20">
             {buckets.map((bucket) => {
               const difference = bucket.allocated - bucket.actual;
               const percentage = (
@@ -75,39 +68,63 @@ const BucketTable = ({
               );
 
               return (
-                <tr key={bucket.id}>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium">
+                <tr
+                  key={bucket.id}
+                  className="group hover:bg-black/5 transition-all duration-300"
+                >
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap font-medium ${
+                      darkMode ? "text-white" : "text-gray-900"
+                    }`}
+                  >
                     {bucket.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      darkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
                     ${bucket.allocated.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      darkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
                     ${bucket.actual.toLocaleString()}
                   </td>
                   <td
-                    className={`px-6 py-4 whitespace-nowrap font-medium ${
-                      difference >= 0 ? "text-green-600" : "text-red-600"
+                    className={`px-6 py-4 whitespace-nowrap font-bold ${
+                      difference >= 0 ? "text-green-500" : "text-red-500"
                     }`}
                   >
                     ${difference.toLocaleString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{percentage}%</td>
+                  <td
+                    className={`px-6 py-4 whitespace-nowrap ${
+                      darkMode ? "text-gray-300" : "text-gray-600"
+                    }`}
+                  >
+                    {percentage}%
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className="px-2 py-1 text-xs rounded-full text-white"
+                      className="px-3 py-1 text-xs font-medium rounded-full text-white shadow-lg"
                       style={{ backgroundColor: category?.color }}
                     >
                       {category?.name}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <button
+                    <ActionButton
                       onClick={() => onDelete(bucket.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
+                      variant="danger"
+                      size="sm"
+                      darkMode={darkMode}
+                      className="opacity-0 group-hover:opacity-100 transition-all duration-300"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </ActionButton>
                   </td>
                 </tr>
               );

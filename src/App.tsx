@@ -1,5 +1,10 @@
 import { useState } from "react";
-import { DollarSign, TrendingUp, Wallet, PieChart } from "lucide-react";
+import {
+  ChartNoAxesCombined,
+  DollarSign,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
 import React from "react";
 
 // Components
@@ -7,7 +12,7 @@ import {
   Header,
   Navigation,
   StatCard,
-  PieChart as CustomPieChart,
+  PieChart,
   BucketForm,
   BucketTable,
   TransactionForm,
@@ -32,8 +37,12 @@ const BudgetingApp = () => {
   React.useEffect(() => {
     if (darkMode) {
       document.body.classList.add("dark");
+      document.body.style.background =
+        "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%)";
     } else {
       document.body.classList.remove("dark");
+      document.body.style.background =
+        "linear-gradient(135deg, #f8fafc 0%, #e2e8f0 50%, #cbd5e1 100%)";
     }
   }, [darkMode]);
 
@@ -262,9 +271,9 @@ const BudgetingApp = () => {
     const totalSpent = buckets.reduce((sum, bucket) => sum + bucket.actual, 0);
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <StatCard
             title="Total Income"
             value={income.amount}
@@ -289,14 +298,14 @@ const BudgetingApp = () => {
           <StatCard
             title="Spent"
             value={totalSpent}
-            icon={PieChart}
+            icon={ChartNoAxesCombined}
             iconColor="text-red-500"
             darkMode={darkMode}
           />
         </div>
 
         {/* Chart */}
-        <CustomPieChart
+        <PieChart
           data={categoryData}
           title="Income Distribution by Category"
           dataKey="allocated"
@@ -308,7 +317,7 @@ const BudgetingApp = () => {
   };
 
   const BucketsTab = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <BucketForm
         newBucket={newBucket}
         setNewBucket={setNewBucket}
@@ -327,7 +336,7 @@ const BudgetingApp = () => {
   );
 
   const TransactionsTab = () => (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <TransactionForm
         newTransaction={newTransaction}
         setNewTransaction={setNewTransaction}
@@ -349,7 +358,7 @@ const BudgetingApp = () => {
     const categoryData = getCategoryData();
 
     return (
-      <div className="space-y-6">
+      <div className="space-y-8">
         {/* Categories Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categoryData.map((category) => (
@@ -362,7 +371,7 @@ const BudgetingApp = () => {
         </div>
 
         {/* Category Chart */}
-        <CustomPieChart
+        <PieChart
           data={categoryData}
           title="Spending by Category"
           dataKey="actual"
@@ -375,8 +384,8 @@ const BudgetingApp = () => {
 
   return (
     <div
-      className={`min-h-screen ${
-        darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
+      className={`min-h-screen transition-all duration-500 ${
+        darkMode ? "text-white" : "text-gray-900"
       }`}
     >
       <Header darkMode={darkMode} setDarkMode={setDarkMode} />
@@ -387,12 +396,56 @@ const BudgetingApp = () => {
       />
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {activeTab === "dashboard" && <DashboardTab />}
-        {activeTab === "buckets" && <BucketsTab />}
-        {activeTab === "transactions" && <TransactionsTab />}
-        {activeTab === "categories" && <CategoriesTab />}
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="animate-fadeIn">
+          {activeTab === "dashboard" && <DashboardTab />}
+          {activeTab === "buckets" && <BucketsTab />}
+          {activeTab === "transactions" && <TransactionsTab />}
+          {activeTab === "categories" && <CategoriesTab />}
+        </div>
       </main>
+
+      {/* Custom CSS for animations */}
+      <style jsx global>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        .animate-fadeIn {
+          animation: fadeIn 0.6s ease-out;
+        }
+
+        /* Smooth transitions for all elements */
+        * {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+          width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+          background: ${darkMode ? "#374151" : "#f1f5f9"};
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+          background: ${darkMode ? "#6366f1" : "#3b82f6"};
+          border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${darkMode ? "#4f46e5" : "#2563eb"};
+        }
+      `}</style>
     </div>
   );
 };

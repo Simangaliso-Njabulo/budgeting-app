@@ -1,11 +1,7 @@
 // src/components/BucketForm.tsx
-import { PlusCircle } from "lucide-react";
-
-interface Category {
-  id: string;
-  name: string;
-  color: string;
-}
+import { Plus } from "lucide-react";
+import ActionButton from "./ActionButton";
+import type { Category } from "../types";
 
 interface BucketFormProps {
   newBucket: {
@@ -28,21 +24,29 @@ const BucketForm = ({
 }: BucketFormProps) => {
   return (
     <div
-      className={`p-6 rounded-lg shadow-md ${
-        darkMode ? "bg-gray-800" : "bg-white"
+      className={`rounded-2xl p-8 shadow-2xl transition-all duration-500 ${
+        darkMode
+          ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50"
+          : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"
       }`}
     >
-      <h3 className="text-lg font-semibold mb-4">Add New Bucket</h3>
+      <h2
+        className={`text-xl font-bold mb-6 ${
+          darkMode ? "text-white" : "text-gray-900"
+        }`}
+      >
+        Add New Bucket
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input
           type="text"
           placeholder="Bucket Name"
           value={newBucket.name}
           onChange={(e) => setNewBucket({ ...newBucket, name: e.target.value })}
-          className={`p-2 border rounded-md ${
+          className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
             darkMode
-              ? "bg-gray-700 border-gray-600"
-              : "bg-white border-gray-300"
+              ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-purple-500 focus:border-purple-500"
+              : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
           }`}
         />
         <input
@@ -55,10 +59,10 @@ const BucketForm = ({
               allocated: parseFloat(e.target.value) || 0,
             })
           }
-          className={`p-2 border rounded-md ${
+          className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
             darkMode
-              ? "bg-gray-700 border-gray-600"
-              : "bg-white border-gray-300"
+              ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400 focus:ring-purple-500 focus:border-purple-500"
+              : "bg-white border-gray-300 text-gray-900 placeholder-gray-500 focus:ring-blue-500 focus:border-blue-500"
           }`}
         />
         <select
@@ -66,10 +70,10 @@ const BucketForm = ({
           onChange={(e) =>
             setNewBucket({ ...newBucket, categoryId: e.target.value })
           }
-          className={`p-2 border rounded-md ${
+          className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
             darkMode
-              ? "bg-gray-700 border-gray-600"
-              : "bg-white border-gray-300"
+              ? "bg-gray-700 border-gray-600 text-white focus:ring-purple-500 focus:border-purple-500"
+              : "bg-white border-gray-300 text-gray-900 focus:ring-blue-500 focus:border-blue-500"
           }`}
         >
           <option value="">Select Category</option>
@@ -79,13 +83,16 @@ const BucketForm = ({
             </option>
           ))}
         </select>
-        <button
+        <ActionButton
           onClick={onAdd}
-          className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
+          variant="primary"
+          size="md"
+          darkMode={darkMode}
+          className="w-full justify-center flex items-center"
         >
-          <PlusCircle className="h-4 w-4 mr-2" />
+          <Plus className="h-4 w-4 mr-2" />
           Add Bucket
-        </button>
+        </ActionButton>
       </div>
     </div>
   );

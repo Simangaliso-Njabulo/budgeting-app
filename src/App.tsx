@@ -1,55 +1,32 @@
 import { useState } from "react";
-import {
-  PlusCircle,
-  Wallet,
-  TrendingUp,
-  PieChart,
-  List,
-  Trash2,
-  DollarSign,
-} from "lucide-react";
-import {
-  PieChart as RechartsPieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  Legend,
-} from "recharts";
+import { DollarSign, TrendingUp, Wallet, PieChart } from "lucide-react";
 import React from "react";
 
+// Components
+import {
+  Header,
+  Navigation,
+  StatCard,
+  PieChart as CustomPieChart,
+  BucketForm,
+  BucketTable,
+  TransactionForm,
+  TransactionTable,
+  CategoryCard,
+} from "./components";
+
 // Types
-type Income = {
-  amount: number;
-  savings: number;
-};
-
-type Bucket = {
-  id: string;
-  name: string;
-  allocated: number;
-  actual: number;
-  categoryId: string;
-};
-
-type Transaction = {
-  id: number;
-  item: string;
-  bucketId: string;
-  date: string;
-  amount: number;
-  balanceAfter: number;
-};
-
-type Category = {
-  id: string;
-  name: string;
-  color: string;
-};
+import type {
+  Income,
+  Bucket,
+  Transaction,
+  Category,
+  CategoryData,
+} from "./types";
 
 const BudgetingApp = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [darkMode, setDarkMode] = useState(true); // Default to dark mode
+  const [darkMode, setDarkMode] = useState(true);
 
   // Apply dark mode to body element
   React.useEffect(() => {
@@ -138,7 +115,7 @@ const BudgetingApp = () => {
   });
 
   // Calculate category data for charts
-  const getCategoryData = () => {
+  const getCategoryData = (): CategoryData[] => {
     return categories.map((category) => {
       const categoryBuckets = buckets.filter(
         (bucket) => bucket.categoryId === category.id
@@ -233,422 +210,81 @@ const BudgetingApp = () => {
       <div className="space-y-6">
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div
-            className={`p-6 rounded-lg shadow-md ${
-              darkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-blue-500" />
-              <div className="ml-4">
-                <p
-                  className={`text-sm ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Total Income
-                </p>
-                <p className="text-2xl font-bold">
-                  ${income.amount.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`p-6 rounded-lg shadow-md ${
-              darkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-green-500" />
-              <div className="ml-4">
-                <p
-                  className={`text-sm ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Savings
-                </p>
-                <p className="text-2xl font-bold">
-                  ${income.savings.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`p-6 rounded-lg shadow-md ${
-              darkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div className="flex items-center">
-              <Wallet className="h-8 w-8 text-yellow-500" />
-              <div className="ml-4">
-                <p
-                  className={`text-sm ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Allocated
-                </p>
-                <p className="text-2xl font-bold">
-                  ${totalAllocated.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <div
-            className={`p-6 rounded-lg shadow-md ${
-              darkMode ? "bg-gray-800" : "bg-white"
-            }`}
-          >
-            <div className="flex items-center">
-              <PieChart className="h-8 w-8 text-red-500" />
-              <div className="ml-4">
-                <p
-                  className={`text-sm ${
-                    darkMode ? "text-gray-400" : "text-gray-600"
-                  }`}
-                >
-                  Spent
-                </p>
-                <p className="text-2xl font-bold">
-                  ${totalSpent.toLocaleString()}
-                </p>
-              </div>
-            </div>
-          </div>
+          <StatCard
+            title="Total Income"
+            value={income.amount}
+            icon={DollarSign}
+            iconColor="text-blue-500"
+            darkMode={darkMode}
+          />
+          <StatCard
+            title="Savings"
+            value={income.savings}
+            icon={TrendingUp}
+            iconColor="text-green-500"
+            darkMode={darkMode}
+          />
+          <StatCard
+            title="Allocated"
+            value={totalAllocated}
+            icon={Wallet}
+            iconColor="text-yellow-500"
+            darkMode={darkMode}
+          />
+          <StatCard
+            title="Spent"
+            value={totalSpent}
+            icon={PieChart}
+            iconColor="text-red-500"
+            darkMode={darkMode}
+          />
         </div>
 
         {/* Chart */}
-        <div
-          className={`p-6 rounded-lg shadow-md ${
-            darkMode ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <h3 className="text-lg font-semibold mb-4">
-            Income Distribution by Category
-          </h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={5}
-                  dataKey="allocated"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number) => [
-                    `$${value.toLocaleString()}`,
-                    "Allocated",
-                  ]}
-                />
-                <Legend />
-              </RechartsPieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <CustomPieChart
+          data={categoryData}
+          title="Income Distribution by Category"
+          dataKey="allocated"
+          tooltipLabel="Allocated"
+          darkMode={darkMode}
+        />
       </div>
     );
   };
 
   const BucketsTab = () => (
     <div className="space-y-6">
-      {/* Add Bucket Form */}
-      <div
-        className={`p-6 rounded-lg shadow-md ${
-          darkMode ? "bg-gray-800" : "bg-white"
-        }`}
-      >
-        <h3 className="text-lg font-semibold mb-4">Add New Bucket</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <input
-            type="text"
-            placeholder="Bucket Name"
-            value={newBucket.name}
-            onChange={(e) =>
-              setNewBucket({ ...newBucket, name: e.target.value })
-            }
-            className={`p-2 border rounded-md ${
-              darkMode
-                ? "bg-gray-700 border-gray-600"
-                : "bg-white border-gray-300"
-            }`}
-          />
-          <input
-            type="number"
-            placeholder="Allocated Amount"
-            value={newBucket.allocated || ""}
-            onChange={(e) =>
-              setNewBucket({
-                ...newBucket,
-                allocated: parseFloat(e.target.value) || 0,
-              })
-            }
-            className={`p-2 border rounded-md ${
-              darkMode
-                ? "bg-gray-700 border-gray-600"
-                : "bg-white border-gray-300"
-            }`}
-          />
-          <select
-            value={newBucket.categoryId}
-            onChange={(e) =>
-              setNewBucket({ ...newBucket, categoryId: e.target.value })
-            }
-            className={`p-2 border rounded-md ${
-              darkMode
-                ? "bg-gray-700 border-gray-600"
-                : "bg-white border-gray-300"
-            }`}
-          >
-            <option value="">Select Category</option>
-            {categories.map((category) => (
-              <option key={category.id} value={category.id}>
-                {category.name}
-              </option>
-            ))}
-          </select>
-          <button
-            onClick={addBucket}
-            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Bucket
-          </button>
-        </div>
-      </div>
-
-      {/* Buckets List */}
-      <div
-        className={`rounded-lg shadow-md overflow-hidden ${
-          darkMode ? "bg-gray-800" : "bg-white"
-        }`}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className={`${darkMode ? "bg-gray-700" : "bg-gray-50"}`}>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Allocated
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Actual
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Difference
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  % of Income
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {buckets.map((bucket) => {
-                const difference = bucket.allocated - bucket.actual;
-                const percentage = (
-                  (bucket.allocated / income.amount) *
-                  100
-                ).toFixed(1);
-                const category = categories.find(
-                  (c) => c.id === bucket.categoryId
-                );
-
-                return (
-                  <tr key={bucket.id}>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">
-                      {bucket.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      ${bucket.allocated.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      ${bucket.actual.toLocaleString()}
-                    </td>
-                    <td
-                      className={`px-6 py-4 whitespace-nowrap font-medium ${
-                        difference >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      ${difference.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {percentage}%
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className="px-2 py-1 text-xs rounded-full text-white"
-                        style={{ backgroundColor: category?.color }}
-                      >
-                        {category?.name}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <button
-                        onClick={() => deleteBucket(bucket.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <BucketForm
+        newBucket={newBucket}
+        setNewBucket={setNewBucket}
+        categories={categories}
+        onAdd={addBucket}
+        darkMode={darkMode}
+      />
+      <BucketTable
+        buckets={buckets}
+        categories={categories}
+        income={income}
+        onDelete={deleteBucket}
+        darkMode={darkMode}
+      />
     </div>
   );
 
   const TransactionsTab = () => (
     <div className="space-y-6">
-      {/* Add Transaction Form */}
-      <div
-        className={`p-6 rounded-lg shadow-md ${
-          darkMode ? "bg-gray-800" : "bg-white"
-        }`}
-      >
-        <h3 className="text-lg font-semibold mb-4">Add New Transaction</h3>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <input
-            type="text"
-            placeholder="Item Purchased"
-            value={newTransaction.item}
-            onChange={(e) =>
-              setNewTransaction({ ...newTransaction, item: e.target.value })
-            }
-            className={`p-2 border rounded-md ${
-              darkMode
-                ? "bg-gray-700 border-gray-600"
-                : "bg-white border-gray-300"
-            }`}
-          />
-          <select
-            value={newTransaction.bucketId}
-            onChange={(e) =>
-              setNewTransaction({ ...newTransaction, bucketId: e.target.value })
-            }
-            className={`p-2 border rounded-md ${
-              darkMode
-                ? "bg-gray-700 border-gray-600"
-                : "bg-white border-gray-300"
-            }`}
-          >
-            <option value="">Select Bucket</option>
-            {buckets.map((bucket) => (
-              <option key={bucket.id} value={bucket.id}>
-                {bucket.name}
-              </option>
-            ))}
-          </select>
-          <input
-            type="number"
-            placeholder="Amount"
-            value={newTransaction.amount || ""}
-            onChange={(e) =>
-              setNewTransaction({
-                ...newTransaction,
-                amount: parseFloat(e.target.value) || 0,
-              })
-            }
-            className={`p-2 border rounded-md ${
-              darkMode
-                ? "bg-gray-700 border-gray-600"
-                : "bg-white border-gray-300"
-            }`}
-          />
-          <button
-            onClick={addTransaction}
-            className="bg-blue-500 text-white p-2 rounded-md hover:bg-blue-600 flex items-center justify-center"
-          >
-            <PlusCircle className="h-4 w-4 mr-2" />
-            Add Transaction
-          </button>
-        </div>
-      </div>
-
-      {/* Transactions List */}
-      <div
-        className={`rounded-lg shadow-md overflow-hidden ${
-          darkMode ? "bg-gray-800" : "bg-white"
-        }`}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className={`${darkMode ? "bg-gray-700" : "bg-gray-50"}`}>
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  #
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Item
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Bucket
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Date
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Amount
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider">
-                  Balance After
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {transactions.map((transaction) => {
-                const bucket = buckets.find(
-                  (b) => b.id === transaction.bucketId
-                );
-                return (
-                  <tr key={transaction.id}>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      {transaction.id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {transaction.item}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {bucket?.name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {transaction.date}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium text-red-600">
-                      -${transaction.amount.toLocaleString()}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap font-medium">
-                      ${transaction.balanceAfter.toLocaleString()}
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      <TransactionForm
+        newTransaction={newTransaction}
+        setNewTransaction={setNewTransaction}
+        buckets={buckets}
+        onAdd={addTransaction}
+        darkMode={darkMode}
+      />
+      <TransactionTable
+        transactions={transactions}
+        buckets={buckets}
+        darkMode={darkMode}
+      />
     </div>
   );
 
@@ -660,93 +296,22 @@ const BudgetingApp = () => {
         {/* Categories Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {categoryData.map((category) => (
-            <div
+            <CategoryCard
               key={category.name}
-              className={`p-6 rounded-lg shadow-md ${
-                darkMode ? "bg-gray-800" : "bg-white"
-              }`}
-            >
-              <div className="flex items-center mb-4">
-                <div
-                  className="w-4 h-4 rounded-full mr-3"
-                  style={{ backgroundColor: category.color }}
-                ></div>
-                <h3 className="text-lg font-semibold">{category.name}</h3>
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span
-                    className={`text-sm ${
-                      darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    Allocated:
-                  </span>
-                  <span className="font-medium">
-                    ${category.allocated.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span
-                    className={`text-sm ${
-                      darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    Spent:
-                  </span>
-                  <span className="font-medium">
-                    ${category.actual.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span
-                    className={`text-sm ${
-                      darkMode ? "text-gray-400" : "text-gray-600"
-                    }`}
-                  >
-                    % of Income:
-                  </span>
-                  <span className="font-medium">{category.percentage}%</span>
-                </div>
-              </div>
-            </div>
+              category={category}
+              darkMode={darkMode}
+            />
           ))}
         </div>
 
         {/* Category Chart */}
-        <div
-          className={`p-6 rounded-lg shadow-md ${
-            darkMode ? "bg-gray-800" : "bg-white"
-          }`}
-        >
-          <h3 className="text-lg font-semibold mb-4">Spending by Category</h3>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <RechartsPieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={120}
-                  paddingAngle={5}
-                  dataKey="actual"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(value: number) => [
-                    `$${value.toLocaleString()}`,
-                    "Spent",
-                  ]}
-                />
-                <Legend />
-              </RechartsPieChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
+        <CustomPieChart
+          data={categoryData}
+          title="Spending by Category"
+          dataKey="actual"
+          tooltipLabel="Spent"
+          darkMode={darkMode}
+        />
       </div>
     );
   };
@@ -757,75 +322,12 @@ const BudgetingApp = () => {
         darkMode ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-900"
       }`}
     >
-      {/* Header */}
-      <header className={`shadow-md ${darkMode ? "bg-gray-800" : "bg-white"}`}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-4">
-            <h1 className="text-2xl font-bold">Personal Budget Tracker</h1>
-            <button
-              onClick={() => setDarkMode(!darkMode)}
-              className={`p-2 rounded-md ${
-                darkMode
-                  ? "bg-gray-700 hover:bg-gray-600"
-                  : "bg-gray-200 hover:bg-gray-300"
-              }`}
-            >
-              {darkMode ? "☀️" : "🌙"}
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation */}
-      <nav
-        className={`shadow-sm border-b ${
-          darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
-        }`}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-1">
-            {[
-              { id: "dashboard", label: "Dashboard", icon: PieChart },
-              { id: "buckets", label: "Buckets", icon: Wallet },
-              { id: "transactions", label: "Transactions", icon: List },
-              { id: "categories", label: "Categories", icon: TrendingUp },
-            ].map(({ id, label, icon: Icon }) => (
-              <button
-                key={id}
-                onClick={() => setActiveTab(id)}
-                style={{
-                  backgroundColor:
-                    activeTab === id
-                      ? darkMode
-                        ? "#2563eb"
-                        : "#dbeafe"
-                      : "transparent",
-                  color:
-                    activeTab === id
-                      ? darkMode
-                        ? "#ffffff"
-                        : "#1d4ed8"
-                      : darkMode
-                      ? "#d1d5db"
-                      : "#4b5563",
-                }}
-                className={`flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 border-0 ${
-                  activeTab !== id && darkMode
-                    ? "hover:bg-gray-700 hover:text-white"
-                    : ""
-                } ${
-                  activeTab !== id && !darkMode
-                    ? "hover:bg-gray-100 hover:text-gray-900"
-                    : ""
-                }`}
-              >
-                <Icon className="h-4 w-4 mr-2" />
-                {label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
+      <Header darkMode={darkMode} setDarkMode={setDarkMode} />
+      <Navigation
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        darkMode={darkMode}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">

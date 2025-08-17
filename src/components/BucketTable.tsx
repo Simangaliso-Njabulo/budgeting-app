@@ -104,7 +104,7 @@ const BucketTable = ({
                   <td className="px-6 py-4 whitespace-nowrap">
                     <button
                       onClick={() => onDelete(bucket.id)}
-                      className="text-red-600 hover:text-red-900"
+                      className="text-red-500 hover:text-red-700 transition-colors"
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>

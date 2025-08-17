@@ -197,6 +197,61 @@ const BudgetingApp = () => {
     );
   };
 
+  // Edit transaction
+  const editTransaction = (
+    id: number,
+    updatedTransaction: Partial<Transaction>
+  ) => {
+    setTransactions((prevTransactions) => {
+      return prevTransactions.map((transaction) => {
+        if (transaction.id === id) {
+          const oldAmount = transaction.amount;
+          const newAmount = updatedTransaction.amount || transaction.amount;
+          const oldBucketId = transaction.bucketId;
+          const newBucketId =
+            updatedTransaction.bucketId || transaction.bucketId;
+
+          // Update bucket actual amounts
+          if (oldBucketId !== newBucketId || oldAmount !== newAmount) {
+            setBuckets((prevBuckets) =>
+              prevBuckets.map((bucket) => {
+                if (bucket.id === oldBucketId) {
+                  return { ...bucket, actual: bucket.actual - oldAmount };
+                }
+                if (bucket.id === newBucketId) {
+                  return { ...bucket, actual: bucket.actual + newAmount };
+                }
+                return bucket;
+              })
+            );
+          }
+
+          return { ...transaction, ...updatedTransaction };
+        }
+        return transaction;
+      });
+    });
+  };
+
+  // Delete transaction
+  const deleteTransaction = (id: number) => {
+    const transaction = transactions.find((t) => t.id === id);
+    if (transaction) {
+      // Update bucket actual amount
+      setBuckets((prevBuckets) =>
+        prevBuckets.map((bucket) =>
+          bucket.id === transaction.bucketId
+            ? { ...bucket, actual: bucket.actual - transaction.amount }
+            : bucket
+        )
+      );
+
+      setTransactions((prevTransactions) =>
+        prevTransactions.filter((t) => t.id !== id)
+      );
+    }
+  };
+
   // Tab content components
   const DashboardTab = () => {
     const categoryData = getCategoryData();
@@ -283,6 +338,8 @@ const BudgetingApp = () => {
       <TransactionTable
         transactions={transactions}
         buckets={buckets}
+        onEdit={editTransaction}
+        onDelete={deleteTransaction}
         darkMode={darkMode}
       />
     </div>

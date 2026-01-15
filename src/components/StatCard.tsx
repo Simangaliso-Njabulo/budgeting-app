@@ -1,67 +1,184 @@
 // src/components/StatCard.tsx
-import type { LucideIcon } from "lucide-react";
+import { useEffect, useState, useRef } from "react";
+import { useTheme } from "../context/ThemeContext";
 
 interface StatCardProps {
   title: string;
   value: number;
-  icon: LucideIcon;
-  iconColor: string;
-  darkMode: boolean;
+  total?: number;
+  icon: React.ComponentType<{ className?: string }>;
+  gradient: string;
+  subtitle?: string;
+  showProgress?: boolean;
+  delay?: number;
 }
+
+// Custom hook for counting animation - syncs with progress ring
+const useCountAnimation = (end: number, duration: number = 1500, delay: number = 0) => {
+  const [count, setCount] = useState(0);
+  const [progress, setProgress] = useState(0); // 0 to 1 for ring animation
+  const [hasStarted, setHasStarted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasStarted) {
+          setHasStarted(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => observer.disconnect();
+  }, [hasStarted]);
+
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    const timeout = setTimeout(() => {
+      let startTime: number;
+      const startValue = 0;
+
+      const animate = (currentTime: number) => {
+        if (!startTime) startTime = currentTime;
+        const elapsed = currentTime - startTime;
+        const currentProgress = Math.min(elapsed / duration, 1);
+
+        // Easing function for smooth deceleration - same for both number and ring
+        const easeOutQuart = 1 - Math.pow(1 - currentProgress, 4);
+        const currentCount = Math.floor(startValue + (end - startValue) * easeOutQuart);
+
+        setCount(currentCount);
+        setProgress(easeOutQuart); // Update progress for ring animation
+
+        if (currentProgress < 1) {
+          requestAnimationFrame(animate);
+        }
+      };
+
+      requestAnimationFrame(animate);
+    }, delay);
+
+    return () => clearTimeout(timeout);
+  }, [end, duration, delay, hasStarted]);
+
+  return { count, progress, ref };
+};
 
 const StatCard = ({
   title,
   value,
+  total = 100,
   icon: Icon,
-  iconColor,
-  darkMode,
+  gradient,
+  subtitle,
+  showProgress = true,
+  delay = 0
 }: StatCardProps) => {
+  const { formatCurrency } = useTheme();
+  const { count: animatedValue, progress, ref } = useCountAnimation(value, 1500, delay);
+
+  // Calculate percentage based on the animated value
+  const percentage = total > 0 ? Math.min((animatedValue / total) * 100, 100) : 0;
+
+  // Calculate the final percentage for the ring (what we're animating towards)
+  const finalPercentage = total > 0 ? Math.min((value / total) * 100, 100) : 0;
+
+  const circumference = 2 * Math.PI * 40;
+  // Use progress to animate the ring in sync with the number
+  const strokeDashoffset = circumference - (progress * finalPercentage / 100) * circumference;
+
+  // Get mellow color from gradient
+  const getColor = () => {
+    if (gradient.includes("purple")) return { main: "#a78bfa", muted: "rgba(167, 139, 250, 0.15)" };
+    if (gradient.includes("green")) return { main: "#6ee7b7", muted: "rgba(110, 231, 183, 0.15)" };
+    if (gradient.includes("blue")) return { main: "#7dd3fc", muted: "rgba(125, 211, 252, 0.15)" };
+    if (gradient.includes("orange")) return { main: "#fdba74", muted: "rgba(253, 186, 116, 0.15)" };
+    if (gradient.includes("red")) return { main: "#fca5a5", muted: "rgba(252, 165, 165, 0.15)" };
+    if (gradient.includes("cyan")) return { main: "#67e8f9", muted: "rgba(103, 232, 249, 0.15)" };
+    return { main: "#c4b5fd", muted: "rgba(196, 181, 253, 0.15)" };
+  };
+
+  const color = getColor();
+
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl p-6 transition-all duration-300 transform hover:scale-105 hover:-translate-y-1 ${
-        darkMode
-          ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50 shadow-xl"
-          : "bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-xl"
-      }`}
+      ref={ref}
+      className="stat-card glass-card"
+      style={{
+        "--accent-color": color.main,
+        "--accent-muted": color.muted,
+        animationDelay: `${delay}ms`
+      } as React.CSSProperties}
     >
-      {/* Glow effect */}
-      <div
-        className={`absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300 ${
-          darkMode
-            ? "bg-gradient-to-r from-purple-600/10 to-blue-600/10"
-            : "bg-gradient-to-r from-blue-500/10 to-purple-500/10"
-        }`}
-      ></div>
+      <div className="stat-card-content">
+        {/* Left side - Ring Progress */}
+        {showProgress && (
+          <div className="stat-ring-container">
+            <svg className="stat-ring" viewBox="0 0 100 100">
+              {/* Background ring */}
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke="rgba(255,255,255,0.06)"
+                strokeWidth="8"
+              />
+              {/* Progress ring */}
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                fill="none"
+                stroke={color.main}
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={strokeDashoffset}
+                transform="rotate(-90 50 50)"
+                className="stat-ring-progress"
+                style={{
+                  filter: `drop-shadow(0 0 4px ${color.muted})`,
+                }}
+              />
+            </svg>
+            {/* Icon in center - no background */}
+            <div className="stat-ring-icon-wrapper" style={{ color: color.main }}>
+              <Icon className="stat-ring-icon-svg" />
+            </div>
+          </div>
+        )}
 
-      <div className="relative z-10 flex items-center justify-between">
-        <div>
-          <p
-            className={`text-sm font-medium ${
-              darkMode ? "text-gray-400" : "text-gray-600"
-            }`}
-          >
-            {title}
-          </p>
-          <p
-            className={`text-2xl font-bold ${
-              darkMode ? "text-white" : "text-gray-900"
-            } mt-1`}
-          >
-            ${value.toLocaleString()}
-          </p>
-        </div>
-        <div
-          className={`p-3 rounded-xl bg-gradient-to-br ${
-            iconColor === "text-blue-500"
-              ? "from-blue-500 to-blue-600"
-              : iconColor === "text-green-500"
-              ? "from-green-500 to-green-600"
-              : iconColor === "text-yellow-500"
-              ? "from-yellow-500 to-yellow-600"
-              : "from-red-500 to-red-600"
-          } shadow-lg`}
-        >
-          <Icon className="h-6 w-6 text-white" />
+        {/* Right side - Stats */}
+        <div className="stat-info">
+          <span className="stat-title">{title}</span>
+          <div className="stat-value-row">
+            <span className="stat-value-large" style={{ color: color.main }}>
+              {formatCurrency(animatedValue)}
+            </span>
+            {total && total !== 100 && (
+              <span className="stat-total">/{formatCurrency(total)}</span>
+            )}
+          </div>
+          <div className="stat-percentage">{percentage.toFixed(0)}% {subtitle || "used"}</div>
+          <div className="stat-details">
+            <div className="stat-detail-row">
+              <span className="stat-detail-dot" style={{ background: color.main }} />
+              <span className="stat-detail-label">Used</span>
+              <span className="stat-detail-value">{formatCurrency(animatedValue)}</span>
+            </div>
+            <div className="stat-detail-row">
+              <span className="stat-detail-dot stat-detail-dot-available" />
+              <span className="stat-detail-label">Available</span>
+              <span className="stat-detail-value">{formatCurrency(total - animatedValue)}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

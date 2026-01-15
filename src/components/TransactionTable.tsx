@@ -2,13 +2,14 @@
 import { Edit2, Trash2, Save, X } from "lucide-react";
 import { useState } from "react";
 import ActionButton from "./ActionButton";
+import { useTheme } from "../context/ThemeContext";
 import type { Bucket, Transaction } from "../types";
 
 interface TransactionTableProps {
   transactions: Transaction[];
   buckets: Bucket[];
-  onEdit: (id: number, updatedTransaction: Partial<Transaction>) => void;
-  onDelete: (id: number) => void;
+  onEdit: (id: string, updatedTransaction: Partial<Transaction>) => void;
+  onDelete: (id: string) => void;
   darkMode: boolean;
 }
 
@@ -19,9 +20,10 @@ const TransactionTable = ({
   onDelete,
   darkMode,
 }: TransactionTableProps) => {
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const { formatCurrency } = useTheme();
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({
-    item: "",
+    description: "",
     bucketId: "",
     amount: 0,
   });
@@ -29,8 +31,8 @@ const TransactionTable = ({
   const startEdit = (transaction: Transaction) => {
     setEditingId(transaction.id);
     setEditForm({
-      item: transaction.item,
-      bucketId: transaction.bucketId,
+      description: transaction.description,
+      bucketId: transaction.bucketId || "",
       amount: transaction.amount,
     });
   };
@@ -38,19 +40,18 @@ const TransactionTable = ({
   const saveEdit = () => {
     if (
       editingId &&
-      editForm.item &&
-      editForm.bucketId &&
+      editForm.description &&
       editForm.amount > 0
     ) {
       onEdit(editingId, editForm);
       setEditingId(null);
-      setEditForm({ item: "", bucketId: "", amount: 0 });
+      setEditForm({ description: "", bucketId: "", amount: 0 });
     }
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setEditForm({ item: "", bucketId: "", amount: 0 });
+    setEditForm({ description: "", bucketId: "", amount: 0 });
   };
 
   return (
@@ -73,11 +74,11 @@ const TransactionTable = ({
             <tr>
               {[
                 "#",
-                "Item",
+                "Description",
                 "Bucket",
                 "Date",
                 "Amount",
-                "Balance After",
+                "Type",
                 "Actions",
               ].map((header) => (
                 <th
@@ -112,9 +113,9 @@ const TransactionTable = ({
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editForm.item}
+                        value={editForm.description}
                         onChange={(e) =>
-                          setEditForm({ ...editForm, item: e.target.value })
+                          setEditForm({ ...editForm, description: e.target.value })
                         }
                         className={`p-2 border rounded-xl text-sm w-full transition-all duration-300 focus:ring-2 ${
                           darkMode
@@ -126,7 +127,7 @@ const TransactionTable = ({
                       <span
                         className={darkMode ? "text-white" : "text-gray-900"}
                       >
-                        {transaction.item}
+                        {transaction.description}
                       </span>
                     )}
                   </td>
@@ -162,9 +163,13 @@ const TransactionTable = ({
                       darkMode ? "text-gray-300" : "text-gray-600"
                     }`}
                   >
-                    {transaction.date}
+                    {transaction.date instanceof Date
+                      ? transaction.date.toLocaleDateString()
+                      : new Date(transaction.date).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-bold text-red-500">
+                  <td className={`px-6 py-4 whitespace-nowrap font-bold ${
+                    transaction.type === 'expense' ? 'text-red-500' : 'text-green-500'
+                  }`}>
                     {isEditing ? (
                       <input
                         type="number"
@@ -182,15 +187,15 @@ const TransactionTable = ({
                         }`}
                       />
                     ) : (
-                      `-$${transaction.amount.toLocaleString()}`
+                      `${transaction.type === 'expense' ? '-' : '+'}${formatCurrency(transaction.amount)}`
                     )}
                   </td>
                   <td
-                    className={`px-6 py-4 whitespace-nowrap font-medium ${
-                      darkMode ? "text-white" : "text-gray-900"
+                    className={`px-6 py-4 whitespace-nowrap font-medium capitalize ${
+                      transaction.type === 'expense' ? 'text-red-400' : 'text-green-400'
                     }`}
                   >
-                    ${transaction.balanceAfter.toLocaleString()}
+                    {transaction.type}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2 opacity-0 group-hover:opacity-100 transition-all duration-300">

@@ -1,15 +1,11 @@
 // src/components/TransactionForm.tsx
 import { Plus } from "lucide-react";
 import ActionButton from "./ActionButton";
-import type { Bucket, Transaction } from "../types";
+import type { Bucket, NewTransactionForm } from "../types";
 
 interface TransactionFormProps {
-  newTransaction: {
-    item: string;
-    bucketId: string;
-    amount: number;
-  };
-  setNewTransaction: (transaction: Transaction) => void;
+  newTransaction: NewTransactionForm;
+  setNewTransaction: (transaction: NewTransactionForm) => void;
   buckets: Bucket[];
   onAdd: () => void;
   darkMode: boolean;
@@ -40,15 +36,12 @@ const TransactionForm = ({
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input
           type="text"
-          placeholder="Transaction Item"
-          value={newTransaction.item}
+          placeholder="Description"
+          value={newTransaction.description}
           onChange={(e) =>
             setNewTransaction({
               ...newTransaction,
-              item: e.target.value,
-              id: 0,
-              date: "",
-              balanceAfter: 0,
+              description: e.target.value,
             })
           }
           className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
@@ -58,14 +51,11 @@ const TransactionForm = ({
           }`}
         />
         <select
-          value={newTransaction.bucketId}
+          value={newTransaction.bucketId || ""}
           onChange={(e) =>
             setNewTransaction({
               ...newTransaction,
-              bucketId: e.target.value,
-              id: 0,
-              date: "",
-              balanceAfter: 0,
+              bucketId: e.target.value || undefined,
             })
           }
           className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${
@@ -89,9 +79,6 @@ const TransactionForm = ({
             setNewTransaction({
               ...newTransaction,
               amount: parseFloat(e.target.value) || 0,
-              id: 0,
-              date: "",
-              balanceAfter: 0,
             })
           }
           className={`px-4 py-3 rounded-xl border transition-all duration-300 focus:ring-2 focus:ring-opacity-50 ${

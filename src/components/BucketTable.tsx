@@ -1,6 +1,6 @@
 // src/components/BucketTable.tsx
-import { Trash2 } from "lucide-react";
-import ActionButton from "./ActionButton";
+import { Trash2, Edit2, MoreVertical } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 import type { Bucket, Category, Income } from "../types";
 
 interface BucketTableProps {
@@ -8,131 +8,139 @@ interface BucketTableProps {
   categories: Category[];
   income: Income;
   onDelete: (id: string) => void;
-  darkMode: boolean;
+  title?: string;
+  subtitle?: string;
 }
+
+type BucketStatus = "under" | "on-track" | "over";
+
+const getStatus = (allocated: number, actual: number): BucketStatus => {
+  const ratio = actual / allocated;
+  if (ratio < 0.8) return "under";
+  if (ratio <= 1) return "on-track";
+  return "over";
+};
+
+const getStatusConfig = (status: BucketStatus) => {
+  switch (status) {
+    case "under":
+      return { label: "Under Budget", className: "status-badge-success" };
+    case "on-track":
+      return { label: "On Track", className: "status-badge-info" };
+    case "over":
+      return { label: "Over Budget", className: "status-badge-danger" };
+  }
+};
 
 const BucketTable = ({
   buckets,
   categories,
   income,
   onDelete,
-  darkMode,
+  title = "Budget Management",
+  subtitle,
 }: BucketTableProps) => {
-  return (
-    <div
-      className={`rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ${
-        darkMode
-          ? "bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700/50"
-          : "bg-gradient-to-br from-white to-gray-50 border border-gray-200"
-      }`}
-    >
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead
-            className={`${
-              darkMode
-                ? "bg-gradient-to-r from-gray-700 to-gray-800"
-                : "bg-gradient-to-r from-gray-50 to-gray-100"
-            }`}
-          >
-            <tr>
-              {[
-                "Name",
-                "Allocated",
-                "Actual",
-                "Difference",
-                "% of Income",
-                "Category",
-                "Actions",
-              ].map((header) => (
-                <th
-                  key={header}
-                  className={`px-6 py-4 text-left text-xs font-bold uppercase tracking-wider ${
-                    darkMode ? "text-gray-300" : "text-gray-700"
-                  }`}
-                >
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200/20">
-            {buckets.map((bucket) => {
-              const difference = bucket.allocated - bucket.actual;
-              const percentage = (
-                (bucket.allocated / income.amount) *
-                100
-              ).toFixed(1);
-              const category = categories.find(
-                (c) => c.id === bucket.categoryId
-              );
+  const { formatCurrency } = useTheme();
 
-              return (
-                <tr
-                  key={bucket.id}
-                  className="group hover:bg-black/5 transition-all duration-300"
-                >
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap font-medium ${
-                      darkMode ? "text-white" : "text-gray-900"
-                    }`}
-                  >
-                    {bucket.name}
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      darkMode ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    ${bucket.allocated.toLocaleString()}
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      darkMode ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    ${bucket.actual.toLocaleString()}
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap font-bold ${
-                      difference >= 0 ? "text-green-500" : "text-red-500"
-                    }`}
-                  >
-                    ${difference.toLocaleString()}
-                  </td>
-                  <td
-                    className={`px-6 py-4 whitespace-nowrap ${
-                      darkMode ? "text-gray-300" : "text-gray-600"
-                    }`}
-                  >
-                    {percentage}%
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className="px-3 py-1 text-xs font-medium rounded-full text-white shadow-lg"
-                      style={{ backgroundColor: category?.color }}
-                    >
-                      {category?.name}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <ActionButton
-                      onClick={() => onDelete(bucket.id)}
-                      variant="danger"
-                      size="sm"
-                      darkMode={darkMode}
-                      className="opacity-0 group-hover:opacity-100 transition-all duration-300"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </ActionButton>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+  return (
+  <div className="data-table-container">
+    <div className="data-table-header">
+      <div className="data-table-title-section">
+        <h2 className="data-table-title">{title}</h2>
+        {subtitle && <p className="data-table-subtitle">{subtitle}</p>}
+      </div>
+      <div className="data-table-count">
+        {buckets.length} items
       </div>
     </div>
+
+    <div className="data-table-wrapper">
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Category</th>
+            <th>Allocated</th>
+            <th>Spent</th>
+            <th>Remaining</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {buckets.map((bucket) => {
+            const category = categories.find((c) => c.id === bucket.categoryId);
+            const difference = bucket.allocated - bucket.actual;
+            const status = getStatus(bucket.allocated, bucket.actual);
+            const statusConfig = getStatusConfig(status);
+
+            return (
+              <tr key={bucket.id}>
+                <td>
+                  <div className="cell-primary">{bucket.name}</div>
+                  <div className="cell-secondary">
+                    {((bucket.allocated / income.amount) * 100).toFixed(1)}% of income
+                  </div>
+                </td>
+                <td>
+                  <span
+                    className="category-badge"
+                    style={{
+                      backgroundColor: `${category?.color}20`,
+                      color: category?.color,
+                      border: `1px solid ${category?.color}40`
+                    }}
+                  >
+                    {category?.name}
+                  </span>
+                </td>
+                <td>
+                  <span className="cell-amount">{formatCurrency(bucket.allocated)}</span>
+                </td>
+                <td>
+                  <span className="cell-amount">{formatCurrency(bucket.actual)}</span>
+                </td>
+                <td>
+                  <span className={`cell-amount ${difference >= 0 ? "text-success" : "text-danger"}`}>
+                    {difference >= 0 ? "+" : "-"}{formatCurrency(Math.abs(difference))}
+                  </span>
+                </td>
+                <td>
+                  <span className={`status-badge ${statusConfig.className}`}>
+                    {statusConfig.label}
+                  </span>
+                </td>
+                <td>
+                  <div className="action-buttons">
+                    <button className="action-btn action-btn-edit" title="Edit">
+                      <Edit2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => onDelete(bucket.id)}
+                      className="action-btn action-btn-delete"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                    <button className="action-btn action-btn-more" title="More">
+                      <MoreVertical className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+
+    {/* Table Footer */}
+    <div className="data-table-footer">
+      <div className="table-pagination">
+        <span className="pagination-info">Showing {buckets.length} of {buckets.length} entries</span>
+      </div>
+    </div>
+  </div>
   );
 };
 

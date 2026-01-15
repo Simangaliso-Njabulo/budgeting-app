@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Wallet, TrendingUp, PiggyBank } from "lucide-react";
+import { Users, Wallet, TrendingUp, PiggyBank, FolderOpen, Receipt } from "lucide-react";
 
 // Components
 import {
@@ -10,10 +10,24 @@ import {
   FilterBar,
   DonutChart,
   Settings,
+  Modal,
+  Toast,
+  ConfirmDialog,
+  EmptyState,
+  FAB,
+  CategoryForm,
+  CategoryGrid,
+  TransactionFormModal,
+  TransactionList,
+  TransactionFilters,
+  TransactionSummary,
+  RecentTransactions,
+  SpendingTrend,
 } from "./components";
+import type { ToastType } from "./components";
 
 // Types
-import type { Income, Bucket, Category } from "./types";
+import type { Income, Bucket, Category, Transaction, NewCategoryForm, NewTransactionForm } from "./types";
 
 const BudgetingApp = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -27,10 +41,18 @@ const BudgetingApp = () => {
     { id: "4", name: "Transportation", allocated: 200, actual: 180, categoryId: "1" },
     { id: "5", name: "Investments", allocated: 500, actual: 500, categoryId: "3" },
   ]);
-  const [categories] = useState<Category[]>([
-    { id: "1", name: "Living Expenses", color: "#a78bfa" },
-    { id: "2", name: "Entertainment", color: "#6ee7b7" },
-    { id: "3", name: "Investments", color: "#7dd3fc" },
+  const [categories, setCategories] = useState<Category[]>([
+    { id: "1", name: "Living Expenses", color: "#a78bfa", icon: "home", type: "expense" },
+    { id: "2", name: "Entertainment", color: "#6ee7b7", icon: "entertainment", type: "expense" },
+    { id: "3", name: "Investments", color: "#7dd3fc", icon: "work", type: "both" },
+    { id: "4", name: "Income", color: "#fdba74", icon: "income", type: "income" },
+  ]);
+  const [transactions, setTransactions] = useState<Transaction[]>([
+    { id: "1", description: "Coffee Shop", amount: 4.50, type: "expense", categoryId: "1", date: new Date(), createdAt: new Date(), updatedAt: new Date() },
+    { id: "2", description: "Monthly Salary", amount: 5000, type: "income", categoryId: "4", date: new Date(), createdAt: new Date(), updatedAt: new Date() },
+    { id: "3", description: "Grocery Store", amount: 89.00, type: "expense", categoryId: "1", bucketId: "1", date: new Date(Date.now() - 86400000), createdAt: new Date(), updatedAt: new Date() },
+    { id: "4", description: "Netflix", amount: 15.99, type: "expense", categoryId: "2", bucketId: "3", date: new Date(Date.now() - 86400000), createdAt: new Date(), updatedAt: new Date() },
+    { id: "5", description: "Gas Station", amount: 45.00, type: "expense", categoryId: "1", bucketId: "4", date: new Date(Date.now() - 172800000), createdAt: new Date(), updatedAt: new Date() },
   ]);
 
   const [newBucket, setNewBucket] = useState({
@@ -42,6 +64,30 @@ const BudgetingApp = () => {
   // Filter states
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+
+  // Transaction filter states
+  const [txSearchQuery, setTxSearchQuery] = useState("");
+  const [txCategoryFilter, setTxCategoryFilter] = useState("");
+  const [txTypeFilter, setTxTypeFilter] = useState("");
+  const [txDateRange, setTxDateRange] = useState({ start: "", end: "" });
+
+  // Modal states
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<Category | undefined>();
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'transaction' | 'bucket'; item: Category | Transaction | Bucket } | null>(null);
+
+  // Toast state
+  const [toast, setToast] = useState<{ message: string; type: ToastType; visible: boolean }>({
+    message: '',
+    type: 'success',
+    visible: false,
+  });
+
+  const showToast = (message: string, type: ToastType = 'success') => {
+    setToast({ message, type, visible: true });
+  };
 
   // Add new bucket
   const addBucket = () => {
@@ -55,12 +101,125 @@ const BudgetingApp = () => {
       };
       setBuckets([...buckets, bucket]);
       setNewBucket({ name: "", allocated: 0, categoryId: "" });
+      showToast("Bucket created successfully!");
     }
   };
 
   // Delete bucket
   const deleteBucket = (id: string) => {
     setBuckets(buckets.filter((bucket) => bucket.id !== id));
+    showToast("Bucket deleted", "info");
+  };
+
+  // Category CRUD
+  const handleSaveCategory = (data: NewCategoryForm) => {
+    if (editingCategory) {
+      // Update existing
+      setCategories(categories.map(c =>
+        c.id === editingCategory.id
+          ? { ...c, ...data, updatedAt: new Date() }
+          : c
+      ));
+      showToast("Category updated successfully!");
+    } else {
+      // Create new
+      const newCategory: Category = {
+        id: Date.now().toString(),
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      setCategories([...categories, newCategory]);
+      showToast("Category created successfully!");
+    }
+    setIsCategoryModalOpen(false);
+    setEditingCategory(undefined);
+  };
+
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleDeleteCategory = (category: Category) => {
+    setDeleteConfirm({ type: 'category', item: category });
+  };
+
+  const confirmDeleteCategory = () => {
+    if (deleteConfirm?.type === 'category') {
+      const category = deleteConfirm.item as Category;
+      // Soft delete - mark as deleted
+      setCategories(categories.map(c =>
+        c.id === category.id
+          ? { ...c, isDeleted: true, deletedAt: new Date() }
+          : c
+      ));
+      showToast("Category deleted", "info");
+    }
+    setDeleteConfirm(null);
+  };
+
+  // Transaction CRUD
+  const handleSaveTransaction = (data: NewTransactionForm) => {
+    if (editingTransaction) {
+      // Update existing
+      setTransactions(transactions.map(t =>
+        t.id === editingTransaction.id
+          ? { ...t, ...data, updatedAt: new Date() }
+          : t
+      ));
+      showToast("Transaction updated successfully!");
+    } else {
+      // Create new
+      const newTransaction: Transaction = {
+        id: Date.now().toString(),
+        ...data,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+      setTransactions([...transactions, newTransaction]);
+
+      // Update bucket actual if linked
+      if (data.bucketId && data.type === 'expense') {
+        setBuckets(buckets.map(b =>
+          b.id === data.bucketId
+            ? { ...b, actual: b.actual + data.amount }
+            : b
+        ));
+      }
+
+      showToast("Transaction added successfully!");
+    }
+    setIsTransactionModalOpen(false);
+    setEditingTransaction(undefined);
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setIsTransactionModalOpen(true);
+  };
+
+  const handleDeleteTransaction = (transaction: Transaction) => {
+    setDeleteConfirm({ type: 'transaction', item: transaction });
+  };
+
+  const confirmDeleteTransaction = () => {
+    if (deleteConfirm?.type === 'transaction') {
+      const transaction = deleteConfirm.item as Transaction;
+      setTransactions(transactions.filter(t => t.id !== transaction.id));
+
+      // Update bucket actual if linked
+      if (transaction.bucketId && transaction.type === 'expense') {
+        setBuckets(buckets.map(b =>
+          b.id === transaction.bucketId
+            ? { ...b, actual: Math.max(0, b.actual - transaction.amount) }
+            : b
+        ));
+      }
+
+      showToast("Transaction deleted", "info");
+    }
+    setDeleteConfirm(null);
   };
 
   // Filtered buckets
@@ -70,12 +229,26 @@ const BudgetingApp = () => {
     return matchesSearch && matchesCategory;
   });
 
+  // Filtered transactions
+  const filteredTransactions = transactions.filter((tx) => {
+    const matchesSearch = tx.description.toLowerCase().includes(txSearchQuery.toLowerCase());
+    const matchesCategory = !txCategoryFilter || tx.categoryId === txCategoryFilter;
+    const matchesType = !txTypeFilter || tx.type === txTypeFilter;
+    const txDate = new Date(tx.date);
+    const matchesDateStart = !txDateRange.start || txDate >= new Date(txDateRange.start);
+    const matchesDateEnd = !txDateRange.end || txDate <= new Date(txDateRange.end);
+    return matchesSearch && matchesCategory && matchesType && matchesDateStart && matchesDateEnd;
+  });
+
   // Computed values for dashboard
   const totalAllocated = buckets.reduce((sum, bucket) => sum + bucket.allocated, 0);
   const totalSpent = buckets.reduce((sum, bucket) => sum + bucket.actual, 0);
   const remaining = income.amount - totalAllocated;
 
-  const categoryData = categories.map((category) => {
+  // Active categories (not deleted)
+  const activeCategories = categories.filter(c => !c.isDeleted);
+
+  const categoryData = activeCategories.map((category) => {
     const categoryBuckets = buckets.filter((bucket) => bucket.categoryId === category.id);
     const catAllocated = categoryBuckets.reduce((sum, bucket) => sum + bucket.allocated, 0);
     const catActual = categoryBuckets.reduce((sum, bucket) => sum + bucket.actual, 0);
@@ -150,8 +323,19 @@ const BudgetingApp = () => {
                 />
               </div>
 
-              {/* Chart Section */}
-              <DonutChart data={categoryData} />
+              {/* Dashboard Grid - Chart and Recent Transactions */}
+              <div className="dashboard-grid">
+                <DonutChart data={categoryData} />
+                <RecentTransactions
+                  transactions={transactions}
+                  categories={categories}
+                  onViewAll={() => setActiveTab("transactions")}
+                  limit={5}
+                />
+              </div>
+
+              {/* Spending Trend */}
+              <SpendingTrend transactions={transactions} days={7} />
             </div>
           )}
 
@@ -169,7 +353,7 @@ const BudgetingApp = () => {
                   {
                     id: "category",
                     label: "All Categories",
-                    options: categories.map((c) => ({ id: c.id, label: c.name })),
+                    options: activeCategories.map((c) => ({ id: c.id, label: c.name })),
                     value: categoryFilter,
                     onChange: setCategoryFilter,
                   },
@@ -183,7 +367,7 @@ const BudgetingApp = () => {
               <BucketForm
                 newBucket={newBucket}
                 setNewBucket={setNewBucket}
-                categories={categories}
+                categories={activeCategories}
                 onAdd={addBucket}
                 darkMode={true}
               />
@@ -199,41 +383,184 @@ const BudgetingApp = () => {
               />
             </div>
           )}
+
+          {/* Transactions Tab */}
           {activeTab === "transactions" && (
             <div className="page-content">
               <div className="page-header">
                 <h1 className="page-title">Transactions</h1>
                 <p className="page-subtitle">Track your income and expenses</p>
               </div>
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <TrendingUp className="h-12 w-12" />
-                </div>
-                <h3>Coming Soon</h3>
-                <p>Transaction management is under development.</p>
-              </div>
+
+              {/* Transaction Filters */}
+              <TransactionFilters
+                categories={categories}
+                searchQuery={txSearchQuery}
+                onSearchChange={setTxSearchQuery}
+                categoryFilter={txCategoryFilter}
+                onCategoryChange={setTxCategoryFilter}
+                typeFilter={txTypeFilter}
+                onTypeChange={setTxTypeFilter}
+                dateRange={txDateRange}
+                onDateRangeChange={setTxDateRange}
+                onAddClick={() => {
+                  setEditingTransaction(undefined);
+                  setIsTransactionModalOpen(true);
+                }}
+              />
+
+              {/* Transaction Summary */}
+              <TransactionSummary transactions={filteredTransactions} />
+
+              {/* Transaction List */}
+              {filteredTransactions.length > 0 ? (
+                <TransactionList
+                  transactions={filteredTransactions}
+                  categories={categories}
+                  buckets={buckets}
+                  onEdit={handleEditTransaction}
+                  onDelete={handleDeleteTransaction}
+                />
+              ) : (
+                <EmptyState
+                  icon={Receipt}
+                  title="No Transactions Yet"
+                  description="Start tracking your income and expenses by adding your first transaction."
+                  actionLabel="Add Transaction"
+                  onAction={() => {
+                    setEditingTransaction(undefined);
+                    setIsTransactionModalOpen(true);
+                  }}
+                />
+              )}
             </div>
           )}
+
+          {/* Categories Tab */}
           {activeTab === "categories" && (
             <div className="page-content">
               <div className="page-header">
                 <h1 className="page-title">Categories</h1>
                 <p className="page-subtitle">Organize your budget categories</p>
               </div>
-              <div className="empty-state">
-                <div className="empty-state-icon">
-                  <Wallet className="h-12 w-12" />
-                </div>
-                <h3>Coming Soon</h3>
-                <p>Category management is under development.</p>
-              </div>
+
+              {/* Filter Bar for Categories */}
+              <FilterBar
+                searchPlaceholder="Search categories..."
+                searchValue=""
+                onSearchChange={() => {}}
+                onAddClick={() => {
+                  setEditingCategory(undefined);
+                  setIsCategoryModalOpen(true);
+                }}
+                addButtonText="Add Category"
+              />
+
+              {/* Category Grid */}
+              {activeCategories.length > 0 ? (
+                <CategoryGrid
+                  categories={activeCategories}
+                  buckets={buckets}
+                  onEdit={handleEditCategory}
+                  onDelete={handleDeleteCategory}
+                />
+              ) : (
+                <EmptyState
+                  icon={FolderOpen}
+                  title="No Categories Yet"
+                  description="Create categories to organize your budget buckets and transactions."
+                  actionLabel="Add Category"
+                  onAction={() => {
+                    setEditingCategory(undefined);
+                    setIsCategoryModalOpen(true);
+                  }}
+                />
+              )}
             </div>
           )}
+
+          {/* Settings Tab */}
           {activeTab === "settings" && (
             <Settings income={income} onUpdateIncome={setIncome} />
           )}
         </div>
       </main>
+
+      {/* FAB for quick add transaction */}
+      {(activeTab === "dashboard" || activeTab === "transactions") && (
+        <FAB
+          onClick={() => {
+            setEditingTransaction(undefined);
+            setIsTransactionModalOpen(true);
+          }}
+          label="Add Transaction"
+        />
+      )}
+
+      {/* Category Modal */}
+      <Modal
+        isOpen={isCategoryModalOpen}
+        onClose={() => {
+          setIsCategoryModalOpen(false);
+          setEditingCategory(undefined);
+        }}
+        title={editingCategory ? "Edit Category" : "Add Category"}
+        size="md"
+      >
+        <CategoryForm
+          category={editingCategory}
+          onSave={handleSaveCategory}
+          onCancel={() => {
+            setIsCategoryModalOpen(false);
+            setEditingCategory(undefined);
+          }}
+        />
+      </Modal>
+
+      {/* Transaction Modal */}
+      <Modal
+        isOpen={isTransactionModalOpen}
+        onClose={() => {
+          setIsTransactionModalOpen(false);
+          setEditingTransaction(undefined);
+        }}
+        title={editingTransaction ? "Edit Transaction" : "Add Transaction"}
+        size="md"
+      >
+        <TransactionFormModal
+          transaction={editingTransaction}
+          categories={activeCategories}
+          buckets={buckets}
+          onSave={handleSaveTransaction}
+          onCancel={() => {
+            setIsTransactionModalOpen(false);
+            setEditingTransaction(undefined);
+          }}
+        />
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={deleteConfirm !== null}
+        onClose={() => setDeleteConfirm(null)}
+        onConfirm={deleteConfirm?.type === 'category' ? confirmDeleteCategory : confirmDeleteTransaction}
+        title={`Delete ${deleteConfirm?.type === 'category' ? 'Category' : 'Transaction'}`}
+        message={
+          deleteConfirm?.type === 'category'
+            ? "Are you sure you want to delete this category? Existing transactions will keep their category reference."
+            : "Are you sure you want to delete this transaction? This action cannot be undone."
+        }
+        confirmText="Delete"
+        variant="danger"
+      />
+
+      {/* Toast Notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.visible}
+        onClose={() => setToast({ ...toast, visible: false })}
+      />
     </div>
   );
 };

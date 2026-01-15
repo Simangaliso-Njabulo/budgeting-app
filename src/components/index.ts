@@ -11,3 +11,16 @@ export { default as TransactionForm } from './TransactionForm';
 export { default as TransactionTable } from './TransactionTable';
 export { default as CategoryCard } from './CategoryCard';
 export { default as Settings } from './Settings';
+
+// Common components
+export { Modal, Toast, ConfirmDialog, EmptyState, FAB } from './common';
+export type { ToastType } from './common';
+
+// Category components
+export { CategoryForm, CategoryGrid, ICONS } from './categories';
+
+// Transaction components
+export { TransactionForm as TransactionFormModal, TransactionList, TransactionFilters, TransactionSummary } from './transactions';
+
+// Dashboard components
+export { RecentTransactions, SpendingTrend } from './dashboard';

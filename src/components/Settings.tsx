@@ -1,21 +1,31 @@
 // src/components/Settings.tsx
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Coins, Download, Trash2, Check, Wallet, PiggyBank } from 'lucide-react';
+import { Moon, Sun, Coins, Download, Trash2, Check, Wallet, PiggyBank, Shield, Lock, LogOut, Camera, Mail, User, ChevronRight } from 'lucide-react';
 import { useTheme, CURRENCIES } from '../context/ThemeContext';
 import type { Income } from '../types';
 
 interface SettingsProps {
   income: Income;
   onUpdateIncome: (income: Income) => void;
+  user?: { name: string; email: string };
+  onLogout?: () => void;
 }
 
-const Settings = ({ income, onUpdateIncome }: SettingsProps) => {
+const Settings = ({ income, onUpdateIncome, user, onLogout }: SettingsProps) => {
   const { theme, setTheme, currency, setCurrency, formatCurrency } = useTheme();
 
   // Store display values with currency symbol
   const [incomeDisplay, setIncomeDisplay] = useState(formatCurrency(income.amount));
   const [savingsDisplay, setSavingsDisplay] = useState(formatCurrency(income.savings));
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+
+  // Notification settings
+  const [notifications, setNotifications] = useState({
+    budgetAlerts: true,
+    weeklyReports: true,
+    transactionAlerts: false,
+    savingsGoals: true,
+  });
 
   // Update display values when currency changes
   useEffect(() => {
@@ -206,6 +216,133 @@ const Settings = ({ income, onUpdateIncome }: SettingsProps) => {
         </div>
       </div>
 
+      {/* Profile Section */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">Profile</h2>
+        <div className="settings-card">
+          <div className="settings-profile">
+            <div className="settings-avatar">
+              {user?.name?.charAt(0).toUpperCase() || 'U'}
+              <button className="settings-avatar-edit">
+                <Camera className="settings-avatar-edit-icon" />
+              </button>
+            </div>
+            <div className="settings-profile-info">
+              <span className="settings-profile-name">{user?.name || 'User'}</span>
+              <span className="settings-profile-email">{user?.email || 'user@example.com'}</span>
+            </div>
+          </div>
+          <div className="settings-form-group">
+            <label className="settings-form-label">
+              <User className="settings-form-icon" />
+              Display Name
+            </label>
+            <input
+              type="text"
+              className="settings-currency-input"
+              defaultValue={user?.name || 'User'}
+              placeholder="Enter your name"
+            />
+          </div>
+          <div className="settings-form-group">
+            <label className="settings-form-label">
+              <Mail className="settings-form-icon" />
+              Email Address
+            </label>
+            <input
+              type="email"
+              className="settings-currency-input"
+              defaultValue={user?.email || 'user@example.com'}
+              placeholder="Enter your email"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Notifications Section */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">Notifications</h2>
+        <div className="settings-card">
+          <div className="settings-notification-row">
+            <div className="settings-notification-info">
+              <span className="settings-notification-label">Budget Alerts</span>
+              <span className="settings-notification-desc">Get notified when you exceed budget limits</span>
+            </div>
+            <button
+              className={`settings-toggle ${notifications.budgetAlerts ? 'active' : ''}`}
+              onClick={() => setNotifications({ ...notifications, budgetAlerts: !notifications.budgetAlerts })}
+            />
+          </div>
+          <div className="settings-notification-row">
+            <div className="settings-notification-info">
+              <span className="settings-notification-label">Weekly Reports</span>
+              <span className="settings-notification-desc">Receive weekly spending summaries</span>
+            </div>
+            <button
+              className={`settings-toggle ${notifications.weeklyReports ? 'active' : ''}`}
+              onClick={() => setNotifications({ ...notifications, weeklyReports: !notifications.weeklyReports })}
+            />
+          </div>
+          <div className="settings-notification-row">
+            <div className="settings-notification-info">
+              <span className="settings-notification-label">Transaction Alerts</span>
+              <span className="settings-notification-desc">Get notified for every transaction</span>
+            </div>
+            <button
+              className={`settings-toggle ${notifications.transactionAlerts ? 'active' : ''}`}
+              onClick={() => setNotifications({ ...notifications, transactionAlerts: !notifications.transactionAlerts })}
+            />
+          </div>
+          <div className="settings-notification-row">
+            <div className="settings-notification-info">
+              <span className="settings-notification-label">Savings Goals</span>
+              <span className="settings-notification-desc">Alerts when reaching savings milestones</span>
+            </div>
+            <button
+              className={`settings-toggle ${notifications.savingsGoals ? 'active' : ''}`}
+              onClick={() => setNotifications({ ...notifications, savingsGoals: !notifications.savingsGoals })}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Security Section */}
+      <div className="settings-section">
+        <h2 className="settings-section-title">Security</h2>
+        <div className="settings-card">
+          <div className="settings-security-item">
+            <div className="settings-security-left">
+              <div className="settings-security-icon">
+                <Lock className="h-5 w-5" />
+              </div>
+              <div className="settings-security-info">
+                <span className="settings-security-label">Change Password</span>
+                <span className="settings-security-desc">Update your account password</span>
+              </div>
+            </div>
+            <button className="settings-security-btn">
+              Change
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="settings-security-item">
+            <div className="settings-security-left">
+              <div className="settings-security-icon">
+                <Shield className="h-5 w-5" />
+              </div>
+              <div className="settings-security-info">
+                <span className="settings-security-label">Two-Factor Authentication</span>
+                <span className="settings-security-desc">Add an extra layer of security</span>
+              </div>
+            </div>
+            <button className="settings-security-btn">
+              Enable
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Data Section */}
       <div className="settings-section">
         <h2 className="settings-section-title">Data</h2>
@@ -223,6 +360,32 @@ const Settings = ({ income, onUpdateIncome }: SettingsProps) => {
               <Trash2 className="settings-btn-icon" />
               Clear All Data
             </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Logout Section */}
+      {onLogout && (
+        <div className="settings-section">
+          <div className="settings-card">
+            <button className="settings-action-btn settings-action-btn-danger" onClick={onLogout} style={{ width: '100%', justifyContent: 'center' }}>
+              <LogOut className="settings-btn-icon" />
+              Sign Out
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* About Section */}
+      <div className="settings-section">
+        <div className="settings-card">
+          <div className="settings-about">
+            <p className="settings-version">BudgetWise v1.0.0</p>
+            <div className="settings-links">
+              <a href="#" className="settings-link">Privacy Policy</a>
+              <a href="#" className="settings-link">Terms of Service</a>
+              <a href="#" className="settings-link">Help Center</a>
+            </div>
           </div>
         </div>
       </div>

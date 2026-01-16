@@ -72,14 +72,18 @@ const TransactionList = ({ transactions, categories, buckets, onEdit, onDelete }
           </div>
 
           <div className="transaction-group-items">
-            {groupedTransactions[date].map((transaction) => {
+            {groupedTransactions[date].map((transaction, index) => {
               const category = categories.find(c => c.id === transaction.categoryId);
               const bucket = buckets.find(b => b.id === transaction.bucketId);
               const Icon = ICON_MAP[category?.icon || 'home'] || Home;
               const isExpense = transaction.type === 'expense';
 
               return (
-                <div key={transaction.id} className="transaction-item glass-card">
+                <div
+                  key={transaction.id}
+                  className="transaction-item glass-card"
+                  style={{ animationDelay: `${index * 60}ms` }}
+                >
                   <div className="transaction-item-left">
                     <div
                       className="transaction-item-icon"

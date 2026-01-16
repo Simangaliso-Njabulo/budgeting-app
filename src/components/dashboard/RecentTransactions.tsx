@@ -59,13 +59,17 @@ const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5 }: 
         </div>
       ) : (
         <div className="recent-transactions-list">
-          {recentTransactions.map((transaction) => {
+          {recentTransactions.map((transaction, index) => {
             const category = categories.find(c => c.id === transaction.categoryId);
             const Icon = ICON_MAP[category?.icon || 'home'] || Home;
             const isExpense = transaction.type === 'expense';
 
             return (
-              <div key={transaction.id} className="recent-transaction-item">
+              <div
+                key={transaction.id}
+                className="recent-transaction-item"
+                style={{ animationDelay: `${index * 60}ms` }}
+              >
                 <div className="recent-transaction-left">
                   <div
                     className="recent-transaction-icon"

@@ -24,3 +24,6 @@ export { TransactionForm as TransactionFormModal, TransactionList, TransactionFi
 
 // Dashboard components
 export { RecentTransactions, SpendingTrend } from './dashboard';
+
+// Auth components
+export { Login, SignUp, ForgotPassword } from './auth';

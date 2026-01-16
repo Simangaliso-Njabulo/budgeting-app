@@ -50,6 +50,16 @@ const SpendingTrend = ({ transactions, days = 7 }: SpendingTrendProps) => {
 
   const isDark = theme === 'dark';
 
+  // Format Y-axis values - show actual values, not just "0k"
+  const formatYAxis = (value: number) => {
+    if (value === 0) return '0';
+    if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
+    return value.toString();
+  };
+
+  // Calculate nice tick values
+  const yAxisMax = Math.ceil(maxSpent / 100) * 100 || 500;
+
   return (
     <div className="spending-trend glass-card">
       <div className="spending-trend-header">
@@ -59,7 +69,7 @@ const SpendingTrend = ({ transactions, days = 7 }: SpendingTrendProps) => {
 
       <div className="spending-trend-chart">
         <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
             <CartesianGrid
               strokeDasharray="3 3"
               stroke={isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}
@@ -75,8 +85,9 @@ const SpendingTrend = ({ transactions, days = 7 }: SpendingTrendProps) => {
               axisLine={false}
               tickLine={false}
               tick={{ fill: isDark ? '#9ca3af' : '#6b7280', fontSize: 12 }}
-              tickFormatter={(value) => value === 0 ? '0' : `${(value / 1000).toFixed(0)}k`}
-              domain={[0, Math.ceil(maxSpent / 100) * 100]}
+              tickFormatter={formatYAxis}
+              domain={[0, yAxisMax]}
+              tickCount={5}
             />
             <Tooltip
               content={({ active, payload }) => {
@@ -90,13 +101,20 @@ const SpendingTrend = ({ transactions, days = 7 }: SpendingTrendProps) => {
                 }
                 return null;
               }}
+              cursor={{ fill: isDark ? 'rgba(167, 139, 250, 0.1)' : 'rgba(139, 92, 246, 0.1)' }}
             />
             <Bar
               dataKey="spent"
-              fill="#a78bfa"
+              fill="url(#barGradient)"
               radius={[4, 4, 0, 0]}
               maxBarSize={40}
             />
+            <defs>
+              <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a78bfa" />
+                <stop offset="100%" stopColor="#7dd3fc" />
+              </linearGradient>
+            </defs>
           </BarChart>
         </ResponsiveContainer>
       </div>

@@ -1,5 +1,8 @@
 /* Premium Dashboard CSS - Theme Support with Glassmorphism */
 
+/* Google Fonts - Great Vibes for App Title (Signature Style) */
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
 * {
   margin: 0;
   padding: 0;
@@ -76,35 +79,35 @@ label,
    LIGHT THEME (Soft/Muted - Easy on eyes)
    ===================== */
 [data-theme="light"] {
-  /* Color Palette - Light (Warmer, muted tones) */
-  --bg-primary: #e5e9ef;
-  --bg-secondary: #dce2e9;
-  --bg-card: rgba(245, 247, 250, 0.7);
-  --bg-card-solid: #f0f2f5;
-  --bg-card-hover: rgba(225, 230, 238, 0.9);
-  --bg-elevated: rgba(240, 243, 247, 0.7);
+  /* Color Palette - Light (Higher contrast) */
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #e2e8f0;
+  --bg-card: rgba(255, 255, 255, 0.85);
+  --bg-card-solid: #ffffff;
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --bg-elevated: rgba(255, 255, 255, 0.8);
 
-  /* Glass Effects - Light (Softer) */
-  --glass-bg: rgba(240, 243, 247, 0.75);
-  --glass-border: rgba(100, 116, 139, 0.15);
-  --glass-shine: rgba(255, 255, 255, 0.4);
+  /* Glass Effects - Light (More defined) */
+  --glass-bg: rgba(255, 255, 255, 0.88);
+  --glass-border: rgba(100, 116, 139, 0.2);
+  --glass-shine: rgba(255, 255, 255, 0.6);
 
-  /* Border Colors - Light */
-  --border-primary: rgba(100, 116, 139, 0.12);
-  --border-secondary: rgba(100, 116, 139, 0.18);
+  /* Border Colors - Light (Stronger) */
+  --border-primary: rgba(100, 116, 139, 0.18);
+  --border-secondary: rgba(100, 116, 139, 0.25);
 
-  /* Text Colors - Light (Good contrast) */
-  --text-primary: #1e293b;
-  --text-secondary: #475569;
-  --text-muted: #64748b;
+  /* Text Colors - Light (Higher contrast) */
+  --text-primary: #0f172a;
+  --text-secondary: #334155;
+  --text-muted: #475569;
 
-  /* Shadows - Light (Subtle purple tint) */
-  --shadow-sm: 0 1px 3px rgba(139, 92, 246, 0.08);
-  --shadow-md: 0 4px 8px rgba(139, 92, 246, 0.1);
-  --shadow-lg: 0 10px 25px rgba(139, 92, 246, 0.12);
+  /* Shadows - Light (More visible) */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(139, 92, 246, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(139, 92, 246, 0.06);
+  --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(139, 92, 246, 0.08);
 
   /* Sidebar glow */
-  --sidebar-glow: rgba(139, 92, 246, 0.1);
+  --sidebar-glow: rgba(139, 92, 246, 0.12);
 }
 
 /* =====================
@@ -277,20 +280,22 @@ body {
 
 .sidebar-logo {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   cursor: default;
   user-select: none;
 }
 
 .logo-icon-container {
-  width: 42px;
-  height: 42px;
+  width: 52px;
+  height: 52px;
   display: flex;
   align-items: center;
   justify-content: center;
   user-select: none;
   cursor: default;
+  margin-bottom: 4px;
 }
 
 .logo-svg {
@@ -308,20 +313,23 @@ body {
 }
 
 .logo-title {
-  font-size: 18px;
-  font-weight: 700;
+  font-family: 'Great Vibes', cursive;
+  font-size: 26px;
+  font-weight: 400;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   user-select: none;
   cursor: default;
+  text-align: center;
 }
 
 .logo-subtitle {
   font-size: 11px;
   color: var(--text-muted);
-  margin-top: -2px;
+  margin-top: -4px;
   user-select: none;
   cursor: default;
+  text-align: center;
 }
 
 .sidebar-nav {
@@ -3249,10 +3257,11 @@ select option {
 }
 
 .auth-logo-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-family: 'Great Vibes', cursive;
+  font-size: 32px;
+  font-weight: 400;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
+  letter-spacing: 0.02em;
   cursor: default;
   user-select: none;
 }

@@ -380,7 +380,7 @@ const Settings = ({ income, onUpdateIncome, user, onLogout }: SettingsProps) => 
       <div className="settings-section">
         <div className="settings-card">
           <div className="settings-about">
-            <p className="settings-version">BudgetWise v1.0.0</p>
+            <p className="settings-version">MyBudgeting App v1.0.0</p>
             <div className="settings-links">
               <a href="#" className="settings-link">Privacy Policy</a>
               <a href="#" className="settings-link">Terms of Service</a>

@@ -75,10 +75,8 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
           <div className="logo-icon-container">
             <AppLogoIcon />
           </div>
-          <div className="logo-text">
-            <span className="logo-title">{appName}</span>
-            <span className="logo-subtitle">{subtitle}</span>
-          </div>
+          <span className="logo-title">{appName}</span>
+          <span className="logo-subtitle">{subtitle}</span>
         </div>
       </div>
 

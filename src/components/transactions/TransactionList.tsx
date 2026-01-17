@@ -62,28 +62,40 @@ const TransactionList = ({ transactions, categories, buckets, onEdit, onDelete }
     return dateStr;
   };
 
+  // Calculate cumulative item count for animation delays across groups
+  let cumulativeIndex = 0;
+
   return (
     <div className="transaction-list">
-      {sortedDates.map((date) => (
-        <div key={date} className="transaction-group">
-          <div className="transaction-group-header">
-            <span className="transaction-group-date">{formatDateLabel(date)}</span>
-            <span className="transaction-group-count">{groupedTransactions[date].length} transaction{groupedTransactions[date].length !== 1 ? 's' : ''}</span>
-          </div>
+      {sortedDates.map((date, groupIndex) => {
+        const groupStartIndex = cumulativeIndex;
+        cumulativeIndex += groupedTransactions[date].length;
 
-          <div className="transaction-group-items">
-            {groupedTransactions[date].map((transaction, index) => {
-              const category = categories.find(c => c.id === transaction.categoryId);
-              const bucket = buckets.find(b => b.id === transaction.bucketId);
-              const Icon = ICON_MAP[category?.icon || 'home'] || Home;
-              const isExpense = transaction.type === 'expense';
+        return (
+          <div
+            key={date}
+            className="transaction-group"
+            style={{ animationDelay: `${groupIndex * 150}ms` }}
+          >
+            <div className="transaction-group-header">
+              <span className="transaction-group-date">{formatDateLabel(date)}</span>
+              <span className="transaction-group-count">{groupedTransactions[date].length} transaction{groupedTransactions[date].length !== 1 ? 's' : ''}</span>
+            </div>
 
-              return (
-                <div
-                  key={transaction.id}
-                  className="transaction-item glass-card"
-                  style={{ animationDelay: `${index * 60}ms` }}
-                >
+            <div className="transaction-group-items">
+              {groupedTransactions[date].map((transaction, index) => {
+                const category = categories.find(c => c.id === transaction.categoryId);
+                const bucket = buckets.find(b => b.id === transaction.bucketId);
+                const Icon = ICON_MAP[category?.icon || 'home'] || Home;
+                const isExpense = transaction.type === 'expense';
+                const itemDelay = (groupStartIndex + index) * 60 + groupIndex * 150;
+
+                return (
+                  <div
+                    key={transaction.id}
+                    className="transaction-item glass-card"
+                    style={{ animationDelay: `${itemDelay}ms` }}
+                  >
                   <div className="transaction-item-left">
                     <div
                       className="transaction-item-icon"
@@ -135,7 +147,8 @@ const TransactionList = ({ transactions, categories, buckets, onEdit, onDelete }
             })}
           </div>
         </div>
-      ))}
+        );
+      })}
     </div>
   );
 };

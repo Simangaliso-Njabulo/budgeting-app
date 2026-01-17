@@ -6,6 +6,7 @@ interface SidebarProps {
   setActiveTab: (tab: string) => void;
   appName?: string;
   subtitle?: string;
+  onLogout?: () => void;
 }
 
 // Custom Logo Icon Component - Dollar Sign (always purple)
@@ -51,7 +52,7 @@ const AppLogoIcon = () => (
   </svg>
 );
 
-const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "Personal Finance" }: SidebarProps) => {
+const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "Personal Finance", onLogout }: SidebarProps) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
     { id: "buckets", label: "Buckets", icon: Wallet },
@@ -117,7 +118,7 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
               </button>
             );
           })}
-          <button className="nav-item nav-item-logout">
+          <button className="nav-item nav-item-logout" onClick={onLogout}>
             <LogOut className="nav-icon" />
             <span className="nav-label">Sign Out</span>
           </button>

@@ -42,17 +42,21 @@ const Login = ({ onLogin, onNavigate, onSocialLogin }: LoginProps) => {
           <div className="auth-logo">
             <svg className="auth-logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
               <defs>
-                <linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#a78bfa" />
-                  <stop offset="100%" stopColor="#7dd3fc" />
+                <linearGradient id="logoGradPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#8b5cf6" />
+                  <stop offset="50%" stopColor="#a78bfa" />
+                  <stop offset="100%" stopColor="#c4b5fd" />
+                </linearGradient>
+                <linearGradient id="dollarGradPurple" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#7c3aed" />
+                  <stop offset="100%" stopColor="#a78bfa" />
                 </linearGradient>
               </defs>
-              <rect x="8" y="16" width="48" height="36" rx="4" stroke="url(#logoGrad)" strokeWidth="3" fill="none" />
-              <path d="M8 28h48" stroke="url(#logoGrad)" strokeWidth="3" />
-              <circle cx="20" cy="40" r="6" fill="url(#logoGrad)" opacity="0.3" />
-              <circle cx="44" cy="40" r="6" fill="url(#logoGrad)" opacity="0.3" />
+              <circle cx="32" cy="32" r="28" stroke="url(#logoGradPurple)" strokeWidth="2.5" fill="none" opacity="0.5" />
+              <circle cx="32" cy="32" r="24" fill="rgba(139, 92, 246, 0.12)" />
+              <text x="32" y="42" textAnchor="middle" fontSize="32" fontWeight="700" fontFamily="system-ui, -apple-system, sans-serif" fill="url(#dollarGradPurple)">$</text>
             </svg>
-            <h1 className="auth-logo-title">BudgetWise</h1>
+            <h1 className="auth-logo-title">MyBudgeting App</h1>
             <p className="auth-logo-subtitle">Smart Money Management</p>
           </div>
 
@@ -72,7 +76,7 @@ const Login = ({ onLogin, onNavigate, onSocialLogin }: LoginProps) => {
             <div className="auth-input-group">
               <label className="auth-label">Email</label>
               <div className="auth-input-wrapper">
-                <Mail className="auth-input-icon" />
+                <Mail className="auth-input-icon" size={18} />
                 <input
                   type="email"
                   className="auth-input"
@@ -87,7 +91,7 @@ const Login = ({ onLogin, onNavigate, onSocialLogin }: LoginProps) => {
             <div className="auth-input-group">
               <label className="auth-label">Password</label>
               <div className="auth-input-wrapper">
-                <Lock className="auth-input-icon" />
+                <Lock className="auth-input-icon" size={18} />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   className="auth-input"

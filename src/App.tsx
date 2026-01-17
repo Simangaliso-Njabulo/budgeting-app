@@ -23,13 +23,31 @@ import {
   TransactionSummary,
   RecentTransactions,
   SpendingTrend,
+  Login,
+  SignUp,
+  ForgotPassword,
 } from "./components";
 import type { ToastType } from "./components";
 
 // Types
 import type { Income, Bucket, Category, Transaction, NewCategoryForm, NewTransactionForm } from "./types";
 
+// Admin credentials for development
+const ADMIN_CREDENTIALS = {
+  email: 'admin@budgetwise.com',
+  password: 'admin123',
+  name: 'Admin User',
+};
+
 const BudgetingApp = () => {
+  // Auth state - auto-login for development
+  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for dev mode
+  const [authPage, setAuthPage] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [user, setUser] = useState<{ name: string; email: string } | null>({
+    name: ADMIN_CREDENTIALS.name,
+    email: ADMIN_CREDENTIALS.email,
+  });
+
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // State
@@ -87,6 +105,44 @@ const BudgetingApp = () => {
 
   const showToast = (message: string, type: ToastType = 'success') => {
     setToast({ message, type, visible: true });
+  };
+
+  // Auth handlers
+  const handleLogin = async (email: string, password: string) => {
+    // Check admin credentials
+    if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
+      setUser({ name: ADMIN_CREDENTIALS.name, email: ADMIN_CREDENTIALS.email });
+      setIsAuthenticated(true);
+      showToast('Welcome back!', 'success');
+    } else {
+      throw new Error('Invalid credentials');
+    }
+  };
+
+  const handleSignUp = async (name: string, email: string, _password: string) => {
+    // For demo, just create the user
+    setUser({ name, email });
+    setIsAuthenticated(true);
+    showToast('Account created successfully!', 'success');
+  };
+
+  const handleForgotPassword = async (_email: string) => {
+    // For demo, just show success
+    showToast('Password reset email sent!', 'success');
+  };
+
+  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
+    // For demo, simulate social login
+    setUser({ name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`, email: `user@${provider}.com` });
+    setIsAuthenticated(true);
+    showToast(`Signed in with ${provider}!`, 'success');
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setIsAuthenticated(false);
+    setAuthPage('login');
+    showToast('Signed out successfully', 'info');
   };
 
   // Add new bucket
@@ -262,14 +318,45 @@ const BudgetingApp = () => {
     };
   });
 
+  // Show auth pages if not authenticated
+  if (!isAuthenticated) {
+    if (authPage === 'signup') {
+      return (
+        <SignUp
+          onSignUp={handleSignUp}
+          onNavigate={() => setAuthPage('login')}
+          onSocialLogin={handleSocialLogin}
+        />
+      );
+    }
+
+    if (authPage === 'forgot') {
+      return (
+        <ForgotPassword
+          onResetPassword={handleForgotPassword}
+          onNavigate={() => setAuthPage('login')}
+        />
+      );
+    }
+
+    return (
+      <Login
+        onLogin={handleLogin}
+        onNavigate={(page) => setAuthPage(page)}
+        onSocialLogin={handleSocialLogin}
+      />
+    );
+  }
+
   return (
     <div className="app-layout">
       {/* Sidebar */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        appName="BudgetPro"
+        appName="MyBudgeting App"
         subtitle="Personal Finance"
+        onLogout={handleLogout}
       />
 
       {/* Main Content */}
@@ -481,7 +568,12 @@ const BudgetingApp = () => {
 
           {/* Settings Tab */}
           {activeTab === "settings" && (
-            <Settings income={income} onUpdateIncome={setIncome} />
+            <Settings
+              income={income}
+              onUpdateIncome={setIncome}
+              user={user || undefined}
+              onLogout={handleLogout}
+            />
           )}
         </div>
       </main>

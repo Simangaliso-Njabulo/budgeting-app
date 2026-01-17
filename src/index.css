@@ -3340,6 +3340,11 @@ input.auth-input,
   cursor: text;
 }
 
+.auth-input:hover {
+  border-color: rgba(167, 139, 250, 0.5);
+  box-shadow: 0 0 15px rgba(167, 139, 250, 0.15), 0 0 30px rgba(167, 139, 250, 0.08);
+}
+
 .auth-input:focus {
   outline: none;
   border-color: var(--accent-purple);
@@ -3397,9 +3402,18 @@ input.auth-input,
   position: relative;
 }
 
+.auth-checkbox:hover {
+  border-color: rgba(167, 139, 250, 0.5);
+  box-shadow: 0 0 15px rgba(167, 139, 250, 0.15), 0 0 30px rgba(167, 139, 250, 0.08);
+}
+
 .auth-checkbox:checked {
   background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
   border-color: transparent;
+}
+
+.auth-checkbox:checked:hover {
+  box-shadow: 0 0 15px rgba(167, 139, 250, 0.3), 0 0 30px rgba(167, 139, 250, 0.15);
 }
 
 .auth-checkbox:checked::after {

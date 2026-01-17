@@ -246,6 +246,7 @@ body {
   flex-direction: column;
   z-index: 100;
   cursor: default;
+  user-select: none;
 }
 
 .glass-sidebar {

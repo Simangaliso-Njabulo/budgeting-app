@@ -3234,6 +3234,8 @@ select option {
   width: 64px;
   height: 64px;
   margin-bottom: 16px;
+  cursor: default;
+  user-select: none;
 }
 
 .auth-logo-title {
@@ -3280,6 +3282,8 @@ select option {
   display: flex;
   flex-direction: column;
   gap: 18px;
+  cursor: default;
+  user-select: none;
 }
 
 .auth-input-group {
@@ -3292,6 +3296,8 @@ select option {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
+  cursor: default;
+  user-select: none;
 }
 
 .auth-input-wrapper {
@@ -3299,6 +3305,7 @@ select option {
   display: flex;
   align-items: center;
   cursor: text;
+  user-select: none;
 }
 
 .auth-input-icon {
@@ -3469,6 +3476,8 @@ select option {
   align-items: center;
   gap: 16px;
   margin: 24px 0;
+  cursor: default;
+  user-select: none;
 }
 
 .auth-divider-line {
@@ -3482,12 +3491,16 @@ select option {
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  cursor: default;
+  user-select: none;
 }
 
 .auth-social-buttons {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  cursor: default;
+  user-select: none;
 }
 
 .auth-social-btn {
@@ -3544,6 +3557,8 @@ select option {
   margin-top: 24px;
   font-size: 14px;
   color: var(--text-muted);
+  cursor: default;
+  user-select: none;
 }
 
 .auth-footer-link {

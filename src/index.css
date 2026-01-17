@@ -3327,9 +3327,10 @@ select option {
   color: var(--accent-purple);
 }
 
+input.auth-input,
 .auth-input {
   width: 100%;
-  padding: 14px 48px 14px 44px;
+  padding: 14px 48px 14px 46px;
   background: var(--bg-elevated);
   border: 1px solid var(--glass-border);
   border-radius: 10px;

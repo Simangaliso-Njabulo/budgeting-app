@@ -1686,6 +1686,7 @@ select option {
 @media (max-width: 768px) {
   .content-wrapper {
     padding: 20px;
+    padding-bottom: 100px; /* Space for mobile nav */
   }
 
   .filter-bar {
@@ -1702,6 +1703,269 @@ select option {
   .search-input {
     width: 100%;
   }
+
+  /* Filter bar mobile spacing fixes */
+  .filter-bar {
+    gap: 12px;
+    padding: 12px 14px;
+  }
+
+  .filter-bar-left {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .filter-bar-right {
+    flex-wrap: wrap;
+    gap: 8px;
+    width: 100%;
+  }
+
+  /* Hide filter icon and label on mobile for more space */
+  .filter-icon-wrapper,
+  .filter-label {
+    display: none;
+  }
+
+  .filter-select {
+    min-width: 0;
+    flex: 1;
+    padding: 8px 28px 8px 10px;
+    font-size: 12px;
+  }
+
+  .filter-dropdown {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  /* Search wrapper full width on mobile */
+  .search-wrapper {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .search-input {
+    min-width: 0;
+    padding: 8px 10px 8px 32px;
+    font-size: 13px;
+  }
+
+  /* Add button compact on mobile - icon only */
+  .add-button {
+    padding: 10px;
+    font-size: 12px;
+    white-space: nowrap;
+    border-radius: 10px;
+  }
+
+  .add-button span {
+    display: none;
+  }
+
+  /* Transaction summary mobile layout - prevent net from being chopped */
+  .transaction-summary {
+    padding: 14px 16px;
+  }
+
+  .transaction-summary-content {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .transaction-summary-item {
+    width: 100%;
+    flex: none;
+    padding: 10px 12px;
+    background: var(--bg-elevated);
+    border-radius: var(--border-radius);
+  }
+
+  .transaction-summary-divider {
+    display: none;
+  }
+
+  .transaction-summary-value {
+    font-size: 16px;
+  }
+
+  .transaction-summary-icon {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Transaction item mobile - compact view with tap-to-reveal actions */
+  .transaction-item {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    gap: 10px;
+    position: relative;
+  }
+
+  .transaction-item-left {
+    flex: 1;
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .transaction-item-icon {
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+  }
+
+  .transaction-item-info {
+    min-width: 0;
+    flex: 1;
+  }
+
+  .transaction-item-description {
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .transaction-item-meta {
+    font-size: 11px;
+  }
+
+  .transaction-item-right {
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  .transaction-item-amount {
+    font-size: 14px;
+  }
+
+  /* Show actions on mobile via tap (always visible on mobile) */
+  .transaction-item-actions {
+    opacity: 1;
+    position: relative;
+  }
+
+  .transaction-action-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Settings row mobile - compact theme/currency controls */
+  .settings-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .settings-row-info {
+    width: 100%;
+  }
+
+  /* Theme toggle - icon only on mobile */
+  .theme-toggle-group {
+    width: 100%;
+  }
+
+  .theme-toggle-btn {
+    padding: 10px 14px;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .theme-toggle-btn .theme-toggle-label {
+    display: none;
+  }
+
+  /* Currency select - full width on mobile */
+  .settings-select-wrapper {
+    width: 100%;
+  }
+
+  .settings-select {
+    min-width: unset;
+    width: 100%;
+  }
+}
+
+/* =====================
+   MOBILE BOTTOM NAVIGATION
+   ===================== */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  padding: 8px 4px;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 100;
+  justify-content: space-around;
+  align-items: center;
+}
+
+@media (max-width: 1024px) {
+  .mobile-nav {
+    display: flex;
+  }
+}
+
+.mobile-nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 12px;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+  min-width: 60px;
+}
+
+.mobile-nav-item:hover {
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+}
+
+.mobile-nav-item-active {
+  color: var(--accent-purple);
+  background: rgba(167, 139, 250, 0.1);
+}
+
+.mobile-nav-item-active .mobile-nav-icon {
+  transform: scale(1.1);
+}
+
+.mobile-nav-icon {
+  width: 22px;
+  height: 22px;
+  transition: transform 0.2s ease;
+}
+
+.mobile-nav-label {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Light mode mobile nav */
+[data-theme="light"] .mobile-nav {
+  background: rgba(255, 255, 255, 0.9);
+  border-top-color: rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="light"] .mobile-nav-item-active {
+  background: rgba(139, 92, 246, 0.12);
 }
 
 /* Legacy class support */
@@ -2048,6 +2312,20 @@ select option {
 .fab-label {
   font-size: 14px;
   pointer-events: none;
+}
+
+/* FAB mobile positioning - must come after base .fab styles */
+@media (max-width: 1024px) {
+  .fab {
+    bottom: 110px;
+    right: 20px;
+    z-index: 200;
+    padding: 14px;
+  }
+
+  .fab-label {
+    display: none;
+  }
 }
 
 /* =====================
@@ -2605,6 +2883,7 @@ select option {
   font-size: 13px;
   color: var(--text-primary);
   cursor: pointer;
+  text-transform: uppercase;
 }
 
 .filter-date-input:focus {

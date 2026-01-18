@@ -2,6 +2,7 @@
 export { default as Header } from './Header';
 export { default as Navigation } from './Navigation';
 export { default as Sidebar } from './Sidebar';
+export { default as MobileNav } from './MobileNav';
 export { default as StatCard } from './StatCard';
 export { default as BucketForm } from './BucketForm';
 export { default as BucketTable } from './BucketTable';

@@ -126,14 +126,14 @@ const Settings = ({ income, onUpdateIncome, user, onLogout }: SettingsProps) => 
                 onClick={() => setTheme('dark')}
               >
                 <Moon className="theme-toggle-icon" />
-                <span>Dark</span>
+                <span className="theme-toggle-label">Dark</span>
               </button>
               <button
                 className={`theme-toggle-btn ${theme === 'light' ? 'active' : ''}`}
                 onClick={() => setTheme('light')}
               >
                 <Sun className="theme-toggle-icon" />
-                <span>Light</span>
+                <span className="theme-toggle-label">Light</span>
               </button>
             </div>
           </div>

@@ -4,6 +4,7 @@ import { Users, Wallet, TrendingUp, PiggyBank, FolderOpen, Receipt } from "lucid
 // Components
 import {
   Sidebar,
+  MobileNav,
   StatCard,
   BucketForm,
   BucketTable,
@@ -653,6 +654,9 @@ const BudgetingApp = () => {
         isVisible={toast.visible}
         onClose={() => setToast({ ...toast, visible: false })}
       />
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav activeTab={activeTab} setActiveTab={setActiveTab} />
     </div>
   );
 };

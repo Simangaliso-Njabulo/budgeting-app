@@ -145,6 +145,8 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
+  /* Prevent browser swipe navigation and pull-to-refresh */
+  overscroll-behavior-x: none;
 }
 
 /* =====================
@@ -1840,17 +1842,6 @@ select option {
     font-size: 14px;
   }
 
-  /* Show actions on mobile via tap (always visible on mobile) */
-  .transaction-item-actions {
-    opacity: 1;
-    position: relative;
-  }
-
-  .transaction-action-btn {
-    width: 32px;
-    height: 32px;
-  }
-
   /* Settings row mobile - compact theme/currency controls */
   .settings-row {
     flex-direction: column;
@@ -3051,6 +3042,96 @@ select option {
 .transaction-action-btn-danger:hover {
   background: rgba(252, 165, 165, 0.15);
   color: var(--accent-red);
+}
+
+/* Swipeable Transaction Item (Mobile) */
+.transaction-item-swipe-container {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--border-radius);
+  animation: slideInFromBottom 0.4s ease forwards;
+}
+
+.transaction-item-swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  display: none;
+  align-items: stretch;
+  z-index: 1;
+}
+
+.swipe-action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 60px;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: white;
+  transition: opacity 0.2s ease;
+}
+
+.swipe-action-edit {
+  background: var(--accent-purple);
+}
+
+.swipe-action-delete {
+  background: var(--accent-red);
+}
+
+.swipe-action-btn:active {
+  opacity: 0.8;
+}
+
+.transaction-item-swipeable {
+  position: relative;
+  z-index: 2;
+  transition: transform 0.15s ease-out;
+  will-change: transform;
+  touch-action: pan-y;
+  width: 100%;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* Desktop: show regular actions on hover */
+.transaction-item-actions-desktop {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.transaction-item:hover .transaction-item-actions-desktop {
+  opacity: 1;
+}
+
+/* Mobile: show swipe actions, hide desktop actions */
+@media (max-width: 1024px) {
+  .transaction-item-swipe-actions {
+    display: flex;
+  }
+
+  .transaction-item-actions-desktop {
+    display: none !important;
+  }
+
+  /* Override glass-card transparency for swipeable items - needs solid background */
+  .transaction-item-swipeable.glass-card {
+    background: #0f172a !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  [data-theme="light"] .transaction-item-swipeable.glass-card {
+    background: #ffffff !important;
+  }
 }
 
 /* Transaction Summary */

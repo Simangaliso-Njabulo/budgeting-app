@@ -1,0 +1,119 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from ..database import get_db
+from ..models.user import User
+from ..schemas.user import UserCreate, UserResponse, UserLogin
+from ..schemas.auth import Token
+from ..utils.security import hash_password, verify_password, create_tokens, decode_token
+
+router = APIRouter()
+
+
+@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
+    """Register a new user."""
+    # Check if email already exists
+    result = await db.execute(select(User).where(User.email == user_data.email))
+    existing_user = result.scalar_one_or_none()
+
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
+
+    # Create new user
+    new_user = User(
+        email=user_data.email,
+        name=user_data.name,
+        password_hash=hash_password(user_data.password),
+    )
+
+    db.add(new_user)
+    await db.commit()
+    await db.refresh(new_user)
+
+    return new_user
+
+
+@router.post("/login", response_model=Token)
+async def login(
+    form_data: OAuth2PasswordRequestForm = Depends(),
+    db: AsyncSession = Depends(get_db),
+):
+    """Login and get JWT tokens."""
+    # Find user by email
+    result = await db.execute(select(User).where(User.email == form_data.username))
+    user = result.scalar_one_or_none()
+
+    if not user or not verify_password(form_data.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # Create tokens
+    tokens = create_tokens(str(user.id), user.email)
+    return tokens
+
+
+@router.post("/login/json", response_model=Token)
+async def login_json(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+    """Login with JSON body (alternative to form data)."""
+    result = await db.execute(select(User).where(User.email == credentials.email))
+    user = result.scalar_one_or_none()
+
+    if not user or not verify_password(credentials.password, user.password_hash):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password",
+        )
+
+    tokens = create_tokens(str(user.id), user.email)
+    return tokens
+
+
+@router.post("/refresh", response_model=Token)
+async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
+    """Refresh access token using refresh token."""
+    payload = decode_token(refresh_token)
+
+    if payload is None or payload.get("type") != "refresh":
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid refresh token",
+        )
+
+    user_id = payload.get("sub")
+    email = payload.get("email")
+
+    if not user_id or not email:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+        )
+
+    # Verify user still exists
+    result = await db.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found",
+        )
+
+    tokens = create_tokens(str(user.id), user.email)
+    return tokens
+
+
+@router.post("/logout")
+async def logout():
+    """Logout user (client should discard tokens)."""
+    # JWT tokens are stateless, so we just return success
+    # In a production app, you might want to blacklist the token
+    return {"message": "Successfully logged out"}

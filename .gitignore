@@ -24,3 +24,24 @@ dist-ssr
 *.sw?
 tmpclaude-*-cwd
 .claude/
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+ENV/
+*.egg-info/
+.eggs/
+*.egg
+.env
+*.db
+*.sqlite3
+
+# Windows
+nul
+Thumbs.db

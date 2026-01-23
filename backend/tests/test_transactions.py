@@ -191,6 +191,115 @@ class TestFilterTransactions:
             headers=headers
         )
         assert response.status_code == 200
+        data = response.json()
+        assert all(t["date"].startswith("2026-01") for t in data)
+
+    async def test_filter_by_search(self, client: AsyncClient, test_user: dict):
+        """Test filtering transactions by search term."""
+        headers = {"Authorization": f"Bearer {test_user['access_token']}"}
+
+        # Create transactions with different descriptions
+        await client.post("/api/transactions", json={
+            "description": "Grocery shopping at Walmart",
+            "amount": 50.00,
+            "type": "expense",
+            "date": "2026-01-21"
+        }, headers=headers)
+
+        await client.post("/api/transactions", json={
+            "description": "Netflix subscription",
+            "amount": 15.00,
+            "type": "expense",
+            "date": "2026-01-21"
+        }, headers=headers)
+
+        # Search for grocery
+        response = await client.get("/api/transactions?search=grocery", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) >= 1
+        assert all("grocery" in t["description"].lower() for t in data)
+
+    async def test_filter_by_category(self, client: AsyncClient, test_user: dict, test_category: dict):
+        """Test filtering transactions by category."""
+        headers = {"Authorization": f"Bearer {test_user['access_token']}"}
+
+        # Create transaction with category
+        await client.post("/api/transactions", json={
+            "description": "With category",
+            "amount": 50.00,
+            "type": "expense",
+            "date": "2026-01-21",
+            "category_id": test_category["id"]
+        }, headers=headers)
+
+        # Create transaction without category
+        await client.post("/api/transactions", json={
+            "description": "No category",
+            "amount": 25.00,
+            "type": "expense",
+            "date": "2026-01-21"
+        }, headers=headers)
+
+        # Filter by category
+        response = await client.get(
+            f"/api/transactions?category_id={test_category['id']}",
+            headers=headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert all(t["category_id"] == test_category["id"] for t in data)
+
+    async def test_filter_by_bucket(self, client: AsyncClient, test_user: dict, test_bucket: dict):
+        """Test filtering transactions by bucket."""
+        headers = {"Authorization": f"Bearer {test_user['access_token']}"}
+
+        # Create transaction with bucket
+        await client.post("/api/transactions", json={
+            "description": "With bucket",
+            "amount": 50.00,
+            "type": "expense",
+            "date": "2026-01-21",
+            "bucket_id": test_bucket["id"]
+        }, headers=headers)
+
+        # Filter by bucket
+        response = await client.get(
+            f"/api/transactions?bucket_id={test_bucket['id']}",
+            headers=headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert all(t["bucket_id"] == test_bucket["id"] for t in data)
+
+    async def test_filter_by_recurring(self, client: AsyncClient, test_user: dict):
+        """Test filtering transactions by recurring status."""
+        headers = {"Authorization": f"Bearer {test_user['access_token']}"}
+
+        # Create recurring transaction
+        await client.post("/api/transactions", json={
+            "description": "Recurring expense",
+            "amount": 50.00,
+            "type": "expense",
+            "date": "2026-01-21",
+            "is_recurring": True,
+            "recurring_interval": "monthly"
+        }, headers=headers)
+
+        # Create non-recurring transaction
+        await client.post("/api/transactions", json={
+            "description": "One-time expense",
+            "amount": 25.00,
+            "type": "expense",
+            "date": "2026-01-21",
+            "is_recurring": False
+        }, headers=headers)
+
+        # Filter by recurring
+        response = await client.get("/api/transactions?is_recurring=true", headers=headers)
+        assert response.status_code == 200
+        data = response.json()
+        assert all(t["is_recurring"] is True for t in data)
 
 
 class TestTransactionSummary:
@@ -242,6 +351,44 @@ class TestTransactionSummary:
         assert data["total_expenses"] == 700.00
         assert data["net_amount"] == 300.00
         assert data["transaction_count"] == 3
+
+    async def test_summary_with_date_range(self, client: AsyncClient, test_user: dict):
+        """Test summary filtered by date range."""
+        headers = {"Authorization": f"Bearer {test_user['access_token']}"}
+
+        # Create transactions in January
+        await client.post("/api/transactions", json={
+            "description": "Jan Income",
+            "amount": 500.00,
+            "type": "income",
+            "date": "2026-01-15"
+        }, headers=headers)
+
+        await client.post("/api/transactions", json={
+            "description": "Jan Expense",
+            "amount": 100.00,
+            "type": "expense",
+            "date": "2026-01-20"
+        }, headers=headers)
+
+        # Create transactions in February
+        await client.post("/api/transactions", json={
+            "description": "Feb Income",
+            "amount": 1000.00,
+            "type": "income",
+            "date": "2026-02-15"
+        }, headers=headers)
+
+        # Get summary for January only
+        response = await client.get(
+            "/api/transactions/summary?start_date=2026-01-01&end_date=2026-01-31",
+            headers=headers
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["total_income"] == 500.00
+        assert data["total_expenses"] == 100.00
+        assert data["transaction_count"] == 2
 
 
 class TestUpdateTransaction:

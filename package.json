@@ -12,7 +12,10 @@
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:l1": "vitest run tests/L1-UnitTests"
+    "test:l1": "vitest run tests/L1-UnitTests",
+    "test:backend": "cd backend && venv\\Scripts\\python -m pytest",
+    "test:backend:coverage": "cd backend && venv\\Scripts\\python -m pytest --cov=app --cov-report=term-missing",
+    "test:all": "npm run test:run && npm run test:backend"
   },
   "dependencies": {
     "@types/styled-jsx": "^2.2.9",

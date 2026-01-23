@@ -100,6 +100,29 @@ class TestGetCategories:
 
         assert response.status_code == 404
 
+    async def test_get_categories_include_deleted(self, client: AsyncClient, test_user: dict):
+        """Test getting categories including soft-deleted ones."""
+        headers = {"Authorization": f"Bearer {test_user['access_token']}"}
+
+        # Create a category
+        create_response = await client.post("/api/categories", json={
+            "name": "Will Be Deleted",
+            "type": "expense",
+            "color": "#123456"
+        }, headers=headers)
+        category_id = create_response.json()["id"]
+
+        # Soft delete it
+        await client.delete(f"/api/categories/{category_id}", headers=headers)
+
+        # Should not appear in default list
+        response = await client.get("/api/categories", headers=headers)
+        assert not any(c["id"] == category_id for c in response.json())
+
+        # Should appear when include_deleted=true
+        response = await client.get("/api/categories?include_deleted=true", headers=headers)
+        assert any(c["id"] == category_id for c in response.json())
+
 
 class TestUpdateCategory:
     """Tests for updating categories."""

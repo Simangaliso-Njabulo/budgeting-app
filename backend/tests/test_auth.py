@@ -101,6 +101,24 @@ class TestLogin:
         assert "access_token" in data
         assert "refresh_token" in data
 
+    async def test_login_form_wrong_password(self, client: AsyncClient, test_user: dict):
+        """Test form login with wrong password fails."""
+        response = await client.post("/api/auth/login", data={
+            "username": test_user["email"],
+            "password": "wrongpassword"
+        })
+
+        assert response.status_code == 401
+
+    async def test_login_form_nonexistent_user(self, client: AsyncClient):
+        """Test form login with non-existent user fails."""
+        response = await client.post("/api/auth/login", data={
+            "username": "nonexistent@example.com",
+            "password": "password123"
+        })
+
+        assert response.status_code == 401
+
 
 class TestRefresh:
     """Tests for token refresh."""
@@ -133,6 +151,37 @@ class TestRefresh:
             params={"refresh_token": test_user["access_token"]}
         )
 
+        assert response.status_code == 401
+
+
+class TestRefreshEdgeCases:
+    """Edge case tests for token refresh."""
+
+    async def test_refresh_deleted_user(self, client: AsyncClient):
+        """Test refresh token for deleted user fails."""
+        # Create a user
+        await client.post("/api/auth/register", json={
+            "email": "todelete2@example.com",
+            "name": "To Delete",
+            "password": "password123"
+        })
+
+        # Login to get tokens
+        login_response = await client.post("/api/auth/login/json", json={
+            "email": "todelete2@example.com",
+            "password": "password123"
+        })
+        tokens = login_response.json()
+
+        # Delete the user
+        headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+        await client.delete("/api/users/me", headers=headers)
+
+        # Try to refresh - should fail because user is deleted
+        response = await client.post(
+            "/api/auth/refresh",
+            params={"refresh_token": tokens["refresh_token"]}
+        )
         assert response.status_code == 401
 
 

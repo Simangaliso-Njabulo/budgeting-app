@@ -32,6 +32,21 @@ class TestGetCurrentUser:
 
         assert response.status_code == 401
 
+    async def test_get_me_with_refresh_token(self, client: AsyncClient, test_user: dict):
+        """Test that refresh token cannot be used as access token."""
+        # Refresh tokens have type="refresh", should be rejected for API access
+        headers = {"Authorization": f"Bearer {test_user['refresh_token']}"}
+        response = await client.get("/api/users/me", headers=headers)
+
+        assert response.status_code == 401
+
+    async def test_get_me_malformed_token(self, client: AsyncClient):
+        """Test getting profile with malformed token fails."""
+        headers = {"Authorization": "Bearer not.a.valid.jwt.token"}
+        response = await client.get("/api/users/me", headers=headers)
+
+        assert response.status_code == 401
+
 
 class TestUpdateUser:
     """Tests for updating user profile."""

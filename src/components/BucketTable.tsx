@@ -1,5 +1,7 @@
 // src/components/BucketTable.tsx
-import { Trash2, Edit2, MoreVertical } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
+import { Trash2, Edit2, MoreVertical, ArrowRightLeft, ArrowDownLeft } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import type { Bucket, Category, Income } from "../types";
 
@@ -8,6 +10,9 @@ interface BucketTableProps {
   categories: Category[];
   income: Income;
   onDelete: (id: string) => void;
+  onEdit: (bucket: Bucket) => void;
+  onTransferTo?: (bucket: Bucket) => void;
+  onReceiveFrom?: (bucket: Bucket) => void;
   title?: string;
   subtitle?: string;
 }
@@ -37,10 +42,46 @@ const BucketTable = ({
   categories,
   income,
   onDelete,
+  onEdit,
+  onTransferTo,
+  onReceiveFrom,
   title = "Budget Management",
   subtitle,
 }: BucketTableProps) => {
   const { formatCurrency } = useTheme();
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpenMenuId(null);
+        setMenuPosition(null);
+      }
+    };
+
+    if (openMenuId) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openMenuId]);
+
+  const handleMenuToggle = (bucketId: string, buttonElement: HTMLButtonElement) => {
+    if (openMenuId === bucketId) {
+      setOpenMenuId(null);
+      setMenuPosition(null);
+    } else {
+      const rect = buttonElement.getBoundingClientRect();
+      setMenuPosition({
+        top: rect.bottom + 4,
+        left: rect.right - 180, // 180px is min-width of dropdown
+      });
+      setOpenMenuId(bucketId);
+    }
+  };
 
   return (
   <div className="data-table-container">
@@ -112,7 +153,11 @@ const BucketTable = ({
                 </td>
                 <td>
                   <div className="action-buttons">
-                    <button className="action-btn action-btn-edit" title="Edit">
+                    <button
+                      onClick={() => onEdit(bucket)}
+                      className="action-btn action-btn-edit"
+                      title="Edit"
+                    >
                       <Edit2 className="h-4 w-4" />
                     </button>
                     <button
@@ -122,9 +167,63 @@ const BucketTable = ({
                     >
                       <Trash2 className="h-4 w-4" />
                     </button>
-                    <button className="action-btn action-btn-more" title="More">
-                      <MoreVertical className="h-4 w-4" />
-                    </button>
+                    {(onTransferTo || onReceiveFrom) && (
+                      <div className="action-menu-container">
+                        <button
+                          ref={(el) => {
+                            if (el) buttonRefs.current.set(bucket.id, el);
+                          }}
+                          onClick={(e) => handleMenuToggle(bucket.id, e.currentTarget)}
+                          className="action-btn action-btn-more"
+                          title="More options"
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </button>
+                        {openMenuId === bucket.id && menuPosition && createPortal(
+                          <div
+                            ref={menuRef}
+                            className="action-dropdown-portal"
+                            style={{
+                              position: 'fixed',
+                              top: menuPosition.top,
+                              left: menuPosition.left,
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            onMouseDown={(e) => e.stopPropagation()}
+                          >
+                            {onTransferTo && (
+                              <button
+                                type="button"
+                                className="dropdown-item"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  setMenuPosition(null);
+                                  onTransferTo(bucket);
+                                }}
+                              >
+                                <ArrowRightLeft className="h-4 w-4" />
+                                <span>Transfer to...</span>
+                              </button>
+                            )}
+                            {onReceiveFrom && (
+                              <button
+                                type="button"
+                                className="dropdown-item"
+                                onClick={() => {
+                                  setOpenMenuId(null);
+                                  setMenuPosition(null);
+                                  onReceiveFrom(bucket);
+                                }}
+                              >
+                                <ArrowDownLeft className="h-4 w-4" />
+                                <span>Receive from...</span>
+                              </button>
+                            )}
+                          </div>,
+                          document.body
+                        )}
+                      </div>
+                    )}
                   </div>
                 </td>
               </tr>

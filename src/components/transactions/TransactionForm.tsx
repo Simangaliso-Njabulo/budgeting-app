@@ -1,33 +1,17 @@
 // src/components/transactions/TransactionForm.tsx
 import { useState, useEffect } from 'react';
-import { Calendar, Home, ShoppingBag, Car, Utensils, Film, Briefcase, Heart, Gift, Plane, Smartphone, Zap, DollarSign } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
-import type { Transaction, Category, Bucket, NewTransactionForm } from '../../types';
+import type { Transaction, Bucket, NewTransactionForm } from '../../types';
 
 interface TransactionFormProps {
   transaction?: Transaction;
-  categories: Category[];
   buckets: Bucket[];
   onSave: (data: NewTransactionForm) => void;
   onCancel: () => void;
 }
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  home: Home,
-  shopping: ShoppingBag,
-  car: Car,
-  food: Utensils,
-  entertainment: Film,
-  work: Briefcase,
-  health: Heart,
-  gift: Gift,
-  travel: Plane,
-  tech: Smartphone,
-  utilities: Zap,
-  income: DollarSign,
-};
-
-const TransactionForm = ({ transaction, categories, buckets, onSave, onCancel }: TransactionFormProps) => {
+const TransactionForm = ({ transaction, buckets, onSave, onCancel }: TransactionFormProps) => {
   const { formatCurrency, currency } = useTheme();
   const [form, setForm] = useState<NewTransactionForm>({
     description: '',
@@ -57,8 +41,24 @@ const TransactionForm = ({ transaction, categories, buckets, onSave, onCancel }:
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (form.description.trim() && form.amount > 0 && form.categoryId) {
-      onSave(form);
+    // Category comes from the selected bucket
+    const categoryId = form.bucketId ? buckets.find(b => b.id === form.bucketId)?.categoryId : '';
+    if (form.description.trim() && form.amount > 0 && form.bucketId) {
+      onSave({ ...form, categoryId: categoryId || '' });
+    }
+  };
+
+  // Handle bucket selection - auto-fill category from bucket
+  const handleBucketChange = (bucketId: string) => {
+    if (bucketId) {
+      const bucket = buckets.find(b => b.id === bucketId);
+      setForm({
+        ...form,
+        bucketId,
+        categoryId: bucket?.categoryId || form.categoryId,
+      });
+    } else {
+      setForm({ ...form, bucketId: undefined });
     }
   };
 
@@ -79,15 +79,8 @@ const TransactionForm = ({ transaction, categories, buckets, onSave, onCancel }:
     e.target.select();
   };
 
-  // Filter categories by type
-  const filteredCategories = categories.filter(c =>
-    !c.isDeleted && (c.type === form.type || c.type === 'both')
-  );
-
-  // Filter buckets by selected category
-  const filteredBuckets = form.categoryId
-    ? buckets.filter(b => b.categoryId === form.categoryId)
-    : [];
+  // All buckets available for both expense and income
+  const availableBuckets = buckets;
 
   return (
     <form className="transaction-form" onSubmit={handleSubmit}>
@@ -138,54 +131,28 @@ const TransactionForm = ({ transaction, categories, buckets, onSave, onCancel }:
         />
       </div>
 
-      {/* Category Selection - Visual picker */}
+      {/* Bucket Selection - For both expense and income */}
       <div className="form-group">
-        <label className="form-label">Category</label>
-        <div className="category-picker">
-          {filteredCategories.map((category) => {
-            const Icon = ICON_MAP[category.icon || 'home'] || Home;
+        <label className="form-label">
+          {form.type === 'expense' ? 'Take from bucket' : 'Add to bucket'}
+        </label>
+        <select
+          className="form-select"
+          value={form.bucketId || ''}
+          onChange={(e) => handleBucketChange(e.target.value)}
+          required
+        >
+          <option value="">Select bucket...</option>
+          {availableBuckets.map((bucket) => {
+            const remaining = bucket.allocated - bucket.actual;
             return (
-              <button
-                key={category.id}
-                type="button"
-                className={`category-picker-item ${form.categoryId === category.id ? 'selected' : ''}`}
-                onClick={() => setForm({ ...form, categoryId: category.id, bucketId: undefined })}
-                style={form.categoryId === category.id ? {
-                  borderColor: category.color,
-                  backgroundColor: `${category.color}15`
-                } : {}}
-              >
-                <div
-                  className="category-picker-icon"
-                  style={{ backgroundColor: `${category.color}20`, color: category.color }}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span className="category-picker-label">{category.name}</span>
-              </button>
+              <option key={bucket.id} value={bucket.id}>
+                {bucket.name} ({formatCurrency(remaining)} {remaining >= 0 ? 'left' : 'over'})
+              </option>
             );
           })}
-        </div>
+        </select>
       </div>
-
-      {/* Bucket Selection (Optional) */}
-      {filteredBuckets.length > 0 && (
-        <div className="form-group">
-          <label className="form-label">Bucket (Optional)</label>
-          <select
-            className="form-select"
-            value={form.bucketId || ''}
-            onChange={(e) => setForm({ ...form, bucketId: e.target.value || undefined })}
-          >
-            <option value="">Select bucket...</option>
-            {filteredBuckets.map((bucket) => (
-              <option key={bucket.id} value={bucket.id}>
-                {bucket.name} ({formatCurrency(bucket.allocated - bucket.actual)} remaining)
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
 
       {/* Date */}
       <div className="form-group">
@@ -201,18 +168,6 @@ const TransactionForm = ({ transaction, categories, buckets, onSave, onCancel }:
         </div>
       </div>
 
-      {/* Notes (Optional) */}
-      <div className="form-group">
-        <label className="form-label">Notes (Optional)</label>
-        <textarea
-          className="form-textarea"
-          value={form.notes}
-          onChange={(e) => setForm({ ...form, notes: e.target.value })}
-          placeholder="Add any additional notes..."
-          rows={2}
-        />
-      </div>
-
       {/* Actions */}
       <div className="form-actions">
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
@@ -221,7 +176,7 @@ const TransactionForm = ({ transaction, categories, buckets, onSave, onCancel }:
         <button
           type="submit"
           className="btn btn-primary"
-          disabled={!form.description.trim() || form.amount <= 0 || !form.categoryId}
+          disabled={!form.description.trim() || form.amount <= 0 || !form.bucketId}
         >
           {transaction ? 'Update Transaction' : 'Save Transaction'}
         </button>

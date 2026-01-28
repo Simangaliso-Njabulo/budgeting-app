@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, Wallet, TrendingUp, PiggyBank, FolderOpen, Receipt } from "lucide-react";
 
 // Components
@@ -6,7 +6,6 @@ import {
   Sidebar,
   MobileNav,
   StatCard,
-  BucketForm,
   BucketTable,
   FilterBar,
   DonutChart,
@@ -33,46 +32,79 @@ import type { ToastType } from "./components";
 // Types
 import type { Income, Bucket, Category, Transaction, NewCategoryForm, NewTransactionForm } from "./types";
 
-// Admin credentials for development
-const ADMIN_CREDENTIALS = {
-  email: 'admin@budgetwise.com',
-  password: 'admin123',
-  name: 'Admin User',
-};
+// Context
+import { useTheme } from "./context/ThemeContext";
+
+// API
+import { authApi, categoriesApi, bucketsApi, transactionsApi, usersApi, getAccessToken, clearTokens } from "./services/api";
+
+// User type from API
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  currency: string;
+  theme: string;
+  accent_color: string;
+  monthly_income: number;
+  savings_target: number;
+}
+
+// Transform API response to frontend types
+const transformCategory = (cat: Record<string, unknown>): Category => ({
+  id: cat.id as string,
+  name: cat.name as string,
+  color: cat.color as string,
+  icon: cat.icon as string | undefined,
+  type: cat.type as 'expense' | 'income' | 'both',
+  isDeleted: cat.is_deleted as boolean,
+  deletedAt: cat.deleted_at ? new Date(cat.deleted_at as string) : undefined,
+  createdAt: cat.created_at ? new Date(cat.created_at as string) : undefined,
+  updatedAt: cat.updated_at ? new Date(cat.updated_at as string) : undefined,
+});
+
+const transformBucket = (bucket: Record<string, unknown>): Bucket => ({
+  id: bucket.id as string,
+  name: bucket.name as string,
+  allocated: Number(bucket.allocated) || 0,
+  actual: 0, // Will be calculated from transactions
+  categoryId: bucket.category_id as string || '',
+  icon: bucket.icon as string | undefined,
+  color: bucket.color as string | undefined,
+  createdAt: bucket.created_at ? new Date(bucket.created_at as string) : undefined,
+  updatedAt: bucket.updated_at ? new Date(bucket.updated_at as string) : undefined,
+});
+
+const transformTransaction = (tx: Record<string, unknown>): Transaction => ({
+  id: tx.id as string,
+  description: tx.description as string,
+  amount: Number(tx.amount) || 0,
+  type: tx.type as 'income' | 'expense',
+  categoryId: tx.category_id as string || '',
+  bucketId: tx.bucket_id as string | undefined,
+  date: new Date(tx.date as string),
+  notes: tx.notes as string | undefined,
+  createdAt: new Date(tx.created_at as string),
+  updatedAt: new Date(tx.updated_at as string),
+});
 
 const BudgetingApp = () => {
-  // Auth state - auto-login for development
-  const [isAuthenticated, setIsAuthenticated] = useState(true); // Set to true for dev mode
+  // Theme
+  const { formatCurrency } = useTheme();
+
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
   const [authPage, setAuthPage] = useState<'login' | 'signup' | 'forgot'>('login');
-  const [user, setUser] = useState<{ name: string; email: string } | null>({
-    name: ADMIN_CREDENTIALS.name,
-    email: ADMIN_CREDENTIALS.email,
-  });
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState("dashboard");
 
   // State
-  const [income, setIncome] = useState<Income>({ amount: 5000, savings: 1000 });
-  const [buckets, setBuckets] = useState<Bucket[]>([
-    { id: "1", name: "Food & Groceries", allocated: 800, actual: 650, categoryId: "1" },
-    { id: "2", name: "Rent", allocated: 1500, actual: 1500, categoryId: "1" },
-    { id: "3", name: "Entertainment", allocated: 300, actual: 220, categoryId: "2" },
-    { id: "4", name: "Transportation", allocated: 200, actual: 180, categoryId: "1" },
-    { id: "5", name: "Investments", allocated: 500, actual: 500, categoryId: "3" },
-  ]);
-  const [categories, setCategories] = useState<Category[]>([
-    { id: "1", name: "Living Expenses", color: "#a78bfa", icon: "home", type: "expense" },
-    { id: "2", name: "Entertainment", color: "#6ee7b7", icon: "entertainment", type: "expense" },
-    { id: "3", name: "Investments", color: "#7dd3fc", icon: "work", type: "both" },
-    { id: "4", name: "Income", color: "#fdba74", icon: "income", type: "income" },
-  ]);
-  const [transactions, setTransactions] = useState<Transaction[]>([
-    { id: "1", description: "Coffee Shop", amount: 4.50, type: "expense", categoryId: "1", date: new Date(), createdAt: new Date(), updatedAt: new Date() },
-    { id: "2", description: "Monthly Salary", amount: 5000, type: "income", categoryId: "4", date: new Date(), createdAt: new Date(), updatedAt: new Date() },
-    { id: "3", description: "Grocery Store", amount: 89.00, type: "expense", categoryId: "1", bucketId: "1", date: new Date(Date.now() - 86400000), createdAt: new Date(), updatedAt: new Date() },
-    { id: "4", description: "Netflix", amount: 15.99, type: "expense", categoryId: "2", bucketId: "3", date: new Date(Date.now() - 86400000), createdAt: new Date(), updatedAt: new Date() },
-    { id: "5", description: "Gas Station", amount: 45.00, type: "expense", categoryId: "1", bucketId: "4", date: new Date(Date.now() - 172800000), createdAt: new Date(), updatedAt: new Date() },
-  ]);
+  const [income, setIncome] = useState<Income>({ amount: 0, savings: 0 });
+  const [buckets, setBuckets] = useState<Bucket[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const [newBucket, setNewBucket] = useState({
     name: "",
@@ -93,9 +125,49 @@ const BudgetingApp = () => {
   // Modal states
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+  const [isBucketModalOpen, setIsBucketModalOpen] = useState(false);
+  const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Category | undefined>();
   const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
+  const [editingBucket, setEditingBucket] = useState<Bucket | undefined>();
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'transaction' | 'bucket'; item: Category | Transaction | Bucket } | null>(null);
+
+  // Transfer state
+  const [transfer, setTransfer] = useState({ fromBucketId: '', toBucketId: '', amount: 0 });
+  const [transferMode, setTransferMode] = useState<'to' | 'from' | null>(null);
+  const [transferContextBucket, setTransferContextBucket] = useState<Bucket | null>(null);
+
+  // Transfer history - load from localStorage
+  const [transferHistory, setTransferHistory] = useState<{
+    id: string;
+    fromBucketName: string;
+    toBucketName: string;
+    amount: number;
+    date: Date;
+  }[]>(() => {
+    try {
+      const saved = localStorage.getItem('transferHistory');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return parsed.map((item: { id: string; fromBucketName: string; toBucketName: string; amount: number; date: string }) => ({
+          ...item,
+          date: new Date(item.date)
+        }));
+      }
+    } catch (e) {
+      console.error('Failed to load transfer history:', e);
+    }
+    return [];
+  });
+
+  // Save transfer history to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('transferHistory', JSON.stringify(transferHistory));
+    } catch (e) {
+      console.error('Failed to save transfer history:', e);
+    }
+  }, [transferHistory]);
 
   // Toast state
   const [toast, setToast] = useState<{ message: string; type: ToastType; visible: boolean }>({
@@ -108,89 +180,311 @@ const BudgetingApp = () => {
     setToast({ message, type, visible: true });
   };
 
+  // Helper to recalculate bucket spending from transactions
+  // Expenses add to spending, income subtracts from spending (adds money back to bucket)
+  const recalculateBucketSpending = useCallback((txList: Transaction[], bucketList: Bucket[]): Bucket[] => {
+    const bucketSpending: Record<string, number> = {};
+    txList.forEach((tx) => {
+      if (tx.bucketId) {
+        if (tx.type === 'expense') {
+          bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
+        } else if (tx.type === 'income') {
+          bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
+        }
+      }
+    });
+    return bucketList.map((b) => ({
+      ...b,
+      actual: Math.max(0, bucketSpending[b.id] || 0), // Don't go negative
+    }));
+  }, []);
+
+  // Fetch all data from API
+  const fetchData = useCallback(async () => {
+    try {
+      setIsLoading(true);
+
+      // Fetch user data
+      const userData = await authApi.getMe();
+      setUser(userData);
+      setIncome({
+        amount: Number(userData.monthly_income) || 0,
+        savings: Number(userData.savings_target) || 0,
+        currency: userData.currency,
+      });
+
+      // Fetch categories, buckets, and transactions in parallel
+      const [categoriesData, bucketsData, transactionsData] = await Promise.all([
+        categoriesApi.getAll(),
+        bucketsApi.getAll(),
+        transactionsApi.getAll(),
+      ]);
+
+      setCategories(categoriesData.map(transformCategory));
+
+      // Transform buckets and calculate actual spent from transactions
+      const transformedBuckets = bucketsData.map(transformBucket);
+      const transformedTransactions = transactionsData.map(transformTransaction);
+
+      // Calculate actual spent per bucket (expenses add, income subtracts)
+      const bucketSpending: Record<string, number> = {};
+      transformedTransactions.forEach((tx: Transaction) => {
+        if (tx.bucketId) {
+          if (tx.type === 'expense') {
+            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
+          } else if (tx.type === 'income') {
+            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
+          }
+        }
+      });
+
+      setBuckets(transformedBuckets.map((b: Bucket) => ({
+        ...b,
+        actual: Math.max(0, bucketSpending[b.id] || 0),
+      })));
+
+      setTransactions(transformedTransactions);
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      showToast('Failed to load data', 'error');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  // Check auth status and fetch data on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (getAccessToken()) {
+        try {
+          await fetchData();
+          setIsAuthenticated(true);
+        } catch {
+          clearTokens();
+          setIsAuthenticated(false);
+        }
+      }
+      setIsLoading(false);
+    };
+    checkAuth();
+  }, [fetchData]);
+
   // Auth handlers
   const handleLogin = async (email: string, password: string) => {
-    // Check admin credentials
-    if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
-      setUser({ name: ADMIN_CREDENTIALS.name, email: ADMIN_CREDENTIALS.email });
+    try {
+      await authApi.login(email, password);
+      await fetchData();
       setIsAuthenticated(true);
       showToast('Welcome back!', 'success');
-    } else {
-      throw new Error('Invalid credentials');
+    } catch (error) {
+      throw error;
     }
   };
 
-  const handleSignUp = async (name: string, email: string, _password: string) => {
-    // For demo, just create the user
-    setUser({ name, email });
-    setIsAuthenticated(true);
-    showToast('Account created successfully!', 'success');
+  const handleSignUp = async (name: string, email: string, password: string) => {
+    try {
+      await authApi.register(name, email, password);
+      // Auto-login after registration
+      await authApi.login(email, password);
+      await fetchData();
+      setIsAuthenticated(true);
+      showToast('Account created successfully!', 'success');
+    } catch (error) {
+      throw error;
+    }
   };
 
   const handleForgotPassword = async (_email: string) => {
-    // For demo, just show success
-    showToast('Password reset email sent!', 'success');
+    // Backend doesn't have this yet - show message
+    showToast('Password reset is not yet implemented', 'info');
   };
 
   const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
-    // For demo, simulate social login
-    setUser({ name: `${provider.charAt(0).toUpperCase() + provider.slice(1)} User`, email: `user@${provider}.com` });
-    setIsAuthenticated(true);
-    showToast(`Signed in with ${provider}!`, 'success');
+    showToast(`${provider} login is not yet implemented`, 'info');
   };
 
   const handleLogout = () => {
+    authApi.logout();
     setUser(null);
     setIsAuthenticated(false);
     setAuthPage('login');
+    setBuckets([]);
+    setCategories([]);
+    setTransactions([]);
     showToast('Signed out successfully', 'info');
   };
 
-  // Add new bucket
-  const addBucket = () => {
-    if (newBucket.name && newBucket.allocated > 0 && newBucket.categoryId) {
-      const bucket: Bucket = {
-        id: Date.now().toString(),
-        name: newBucket.name,
-        allocated: newBucket.allocated,
-        actual: 0,
-        categoryId: newBucket.categoryId,
-      };
-      setBuckets([...buckets, bucket]);
-      setNewBucket({ name: "", allocated: 0, categoryId: "" });
-      showToast("Bucket created successfully!");
+  // Delete bucket
+  const deleteBucket = async (id: string) => {
+    try {
+      await bucketsApi.delete(id);
+      setBuckets(buckets.filter((bucket) => bucket.id !== id));
+      showToast("Bucket deleted", "info");
+    } catch {
+      showToast("Failed to delete bucket", "error");
     }
   };
 
-  // Delete bucket
-  const deleteBucket = (id: string) => {
-    setBuckets(buckets.filter((bucket) => bucket.id !== id));
-    showToast("Bucket deleted", "info");
+  // Edit bucket
+  const handleEditBucket = (bucket: Bucket) => {
+    setEditingBucket(bucket);
+    setNewBucket({
+      name: bucket.name,
+      allocated: bucket.allocated,
+      categoryId: bucket.categoryId,
+    });
+    setIsBucketModalOpen(true);
+  };
+
+  // Save bucket (create or update)
+  const saveBucket = async () => {
+    if (newBucket.name && newBucket.allocated > 0) {
+      try {
+        if (editingBucket) {
+          // Update existing bucket
+          const updated = await bucketsApi.update(editingBucket.id, {
+            name: newBucket.name,
+            allocated: newBucket.allocated,
+            category_id: newBucket.categoryId || undefined,
+          });
+          const bucket = transformBucket(updated);
+          setBuckets(buckets.map(b =>
+            b.id === editingBucket.id ? { ...bucket, actual: b.actual } : b
+          ));
+          showToast("Bucket updated successfully!");
+        } else {
+          // Create new bucket
+          const created = await bucketsApi.create({
+            name: newBucket.name,
+            allocated: newBucket.allocated,
+            category_id: newBucket.categoryId || undefined,
+          });
+          const bucket = transformBucket(created);
+          setBuckets([...buckets, { ...bucket, actual: 0 }]);
+          showToast("Bucket created successfully!");
+        }
+        setNewBucket({ name: "", allocated: 0, categoryId: "" });
+        setEditingBucket(undefined);
+        setIsBucketModalOpen(false);
+      } catch {
+        showToast(editingBucket ? "Failed to update bucket" : "Failed to create bucket", "error");
+      }
+    }
+  };
+
+  // Cancel bucket editing
+  const cancelBucketEdit = () => {
+    setNewBucket({ name: "", allocated: 0, categoryId: "" });
+    setEditingBucket(undefined);
+    setIsBucketModalOpen(false);
+  };
+
+  // Transfer between buckets
+  const handleTransfer = async () => {
+    if (transfer.fromBucketId && transfer.toBucketId && transfer.amount > 0) {
+      const fromBucket = buckets.find(b => b.id === transfer.fromBucketId);
+      const toBucket = buckets.find(b => b.id === transfer.toBucketId);
+
+      if (!fromBucket || !toBucket) {
+        showToast("Invalid buckets selected", "error");
+        return;
+      }
+
+      try {
+        // Update both buckets' allocated amounts
+        await Promise.all([
+          bucketsApi.update(fromBucket.id, {
+            allocated: fromBucket.allocated - transfer.amount,
+          }),
+          bucketsApi.update(toBucket.id, {
+            allocated: toBucket.allocated + transfer.amount,
+          }),
+        ]);
+
+        // Update local state
+        setBuckets(buckets.map(b => {
+          if (b.id === fromBucket.id) {
+            return { ...b, allocated: b.allocated - transfer.amount };
+          }
+          if (b.id === toBucket.id) {
+            return { ...b, allocated: b.allocated + transfer.amount };
+          }
+          return b;
+        }));
+
+        // Add to transfer history
+        setTransferHistory(prev => [{
+          id: Date.now().toString(),
+          fromBucketName: fromBucket.name,
+          toBucketName: toBucket.name,
+          amount: transfer.amount,
+          date: new Date(),
+        }, ...prev]);
+
+        showToast(`Transferred successfully!`, "success");
+        setTransfer({ fromBucketId: '', toBucketId: '', amount: 0 });
+        setTransferMode(null);
+        setTransferContextBucket(null);
+        setIsTransferModalOpen(false);
+      } catch {
+        showToast("Failed to transfer", "error");
+      }
+    }
+  };
+
+  // Handle "Transfer to" from bucket context menu
+  const handleTransferTo = (bucket: Bucket) => {
+    setTransferMode('to');
+    setTransferContextBucket(bucket);
+    setTransfer({ fromBucketId: bucket.id, toBucketId: '', amount: 0 });
+    setIsTransferModalOpen(true);
+  };
+
+  // Handle "Receive from" from bucket context menu
+  const handleReceiveFrom = (bucket: Bucket) => {
+    setTransferMode('from');
+    setTransferContextBucket(bucket);
+    setTransfer({ fromBucketId: '', toBucketId: bucket.id, amount: 0 });
+    setIsTransferModalOpen(true);
+  };
+
+  // Close transfer modal and reset state
+  const closeTransferModal = () => {
+    setTransfer({ fromBucketId: '', toBucketId: '', amount: 0 });
+    setTransferMode(null);
+    setTransferContextBucket(null);
+    setIsTransferModalOpen(false);
   };
 
   // Category CRUD
-  const handleSaveCategory = (data: NewCategoryForm) => {
-    if (editingCategory) {
-      // Update existing
-      setCategories(categories.map(c =>
-        c.id === editingCategory.id
-          ? { ...c, ...data, updatedAt: new Date() }
-          : c
-      ));
-      showToast("Category updated successfully!");
-    } else {
-      // Create new
-      const newCategory: Category = {
-        id: Date.now().toString(),
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      setCategories([...categories, newCategory]);
-      showToast("Category created successfully!");
+  const handleSaveCategory = async (data: NewCategoryForm) => {
+    try {
+      if (editingCategory) {
+        const updated = await categoriesApi.update(editingCategory.id, {
+          name: data.name,
+          color: data.color,
+          icon: data.icon,
+          type: data.type,
+        });
+        setCategories(categories.map(c =>
+          c.id === editingCategory.id ? transformCategory(updated) : c
+        ));
+        showToast("Category updated successfully!");
+      } else {
+        const created = await categoriesApi.create({
+          name: data.name,
+          color: data.color,
+          icon: data.icon,
+          type: data.type,
+        });
+        setCategories([...categories, transformCategory(created)]);
+        showToast("Category created successfully!");
+      }
+      setIsCategoryModalOpen(false);
+      setEditingCategory(undefined);
+    } catch {
+      showToast("Failed to save category", "error");
     }
-    setIsCategoryModalOpen(false);
-    setEditingCategory(undefined);
   };
 
   const handleEditCategory = (category: Category) => {
@@ -202,53 +496,59 @@ const BudgetingApp = () => {
     setDeleteConfirm({ type: 'category', item: category });
   };
 
-  const confirmDeleteCategory = () => {
+  const confirmDeleteCategory = async () => {
     if (deleteConfirm?.type === 'category') {
       const category = deleteConfirm.item as Category;
-      // Soft delete - mark as deleted
-      setCategories(categories.map(c =>
-        c.id === category.id
-          ? { ...c, isDeleted: true, deletedAt: new Date() }
-          : c
-      ));
-      showToast("Category deleted", "info");
+      try {
+        await categoriesApi.delete(category.id);
+        setCategories(categories.filter(c => c.id !== category.id));
+        showToast("Category deleted", "info");
+      } catch {
+        showToast("Failed to delete category", "error");
+      }
     }
     setDeleteConfirm(null);
   };
 
   // Transaction CRUD
-  const handleSaveTransaction = (data: NewTransactionForm) => {
-    if (editingTransaction) {
-      // Update existing
-      setTransactions(transactions.map(t =>
-        t.id === editingTransaction.id
-          ? { ...t, ...data, updatedAt: new Date() }
-          : t
-      ));
-      showToast("Transaction updated successfully!");
-    } else {
-      // Create new
-      const newTransaction: Transaction = {
-        id: Date.now().toString(),
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+  const handleSaveTransaction = async (data: NewTransactionForm) => {
+    try {
+      const apiData = {
+        description: data.description,
+        amount: data.amount,
+        type: data.type,
+        date: data.date.toISOString().split('T')[0],
+        category_id: data.categoryId || undefined,
+        bucket_id: data.bucketId || undefined,
+        notes: data.notes,
       };
-      setTransactions([...transactions, newTransaction]);
 
-      // Update bucket actual if linked
-      if (data.bucketId && data.type === 'expense') {
-        setBuckets(buckets.map(b =>
-          b.id === data.bucketId
-            ? { ...b, actual: b.actual + data.amount }
-            : b
-        ));
+      let updatedTransactions: Transaction[];
+
+      if (editingTransaction) {
+        const updated = await transactionsApi.update(editingTransaction.id, apiData);
+        const transformedTx = transformTransaction(updated);
+        updatedTransactions = transactions.map(t =>
+          t.id === editingTransaction.id ? transformedTx : t
+        );
+        setTransactions(updatedTransactions);
+        showToast("Transaction updated successfully!");
+      } else {
+        const created = await transactionsApi.create(apiData);
+        const newTransaction = transformTransaction(created);
+        updatedTransactions = [...transactions, newTransaction];
+        setTransactions(updatedTransactions);
+        showToast("Transaction added successfully!");
       }
 
-      showToast("Transaction added successfully!");
+      // Recalculate all bucket spending from transactions
+      setBuckets(recalculateBucketSpending(updatedTransactions, buckets));
+
+      setIsTransactionModalOpen(false);
+      setEditingTransaction(undefined);
+    } catch {
+      showToast("Failed to save transaction", "error");
     }
-    setIsTransactionModalOpen(false);
-    setEditingTransaction(undefined);
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
@@ -260,23 +560,37 @@ const BudgetingApp = () => {
     setDeleteConfirm({ type: 'transaction', item: transaction });
   };
 
-  const confirmDeleteTransaction = () => {
+  const confirmDeleteTransaction = async () => {
     if (deleteConfirm?.type === 'transaction') {
       const transaction = deleteConfirm.item as Transaction;
-      setTransactions(transactions.filter(t => t.id !== transaction.id));
+      try {
+        await transactionsApi.delete(transaction.id);
+        const updatedTransactions = transactions.filter(t => t.id !== transaction.id);
+        setTransactions(updatedTransactions);
 
-      // Update bucket actual if linked
-      if (transaction.bucketId && transaction.type === 'expense') {
-        setBuckets(buckets.map(b =>
-          b.id === transaction.bucketId
-            ? { ...b, actual: Math.max(0, b.actual - transaction.amount) }
-            : b
-        ));
+        // Recalculate all bucket spending
+        setBuckets(recalculateBucketSpending(updatedTransactions, buckets));
+
+        showToast("Transaction deleted", "info");
+      } catch {
+        showToast("Failed to delete transaction", "error");
       }
-
-      showToast("Transaction deleted", "info");
     }
     setDeleteConfirm(null);
+  };
+
+  // Update income settings
+  const handleUpdateIncome = async (newIncome: Income) => {
+    try {
+      await usersApi.updateMe({
+        monthly_income: newIncome.amount,
+        savings_target: newIncome.savings,
+      });
+      setIncome(newIncome);
+      showToast("Settings updated!", "success");
+    } catch {
+      showToast("Failed to update settings", "error");
+    }
   };
 
   // Filtered buckets
@@ -314,10 +628,31 @@ const BudgetingApp = () => {
       name: category.name,
       allocated: catAllocated,
       actual: catActual,
-      percentage: ((catAllocated / income.amount) * 100).toFixed(1),
+      percentage: income.amount > 0 ? ((catAllocated / income.amount) * 100).toFixed(1) : "0",
       color: category.color,
     };
   });
+
+  // Show loading state
+  if (isLoading && isAuthenticated) {
+    return (
+      <div className="app-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div className="spinner" style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid rgba(139, 92, 246, 0.2)',
+            borderTop: '4px solid #8b5cf6',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 16px'
+          }} />
+          <p style={{ color: '#9ca3af' }}>Loading your budget...</p>
+          <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        </div>
+      </div>
+    );
+  }
 
   // Show auth pages if not authenticated
   if (!isAuthenticated) {
@@ -368,7 +703,9 @@ const BudgetingApp = () => {
             <div className="page-content">
               <div className="page-header">
                 <h1 className="page-title">Dashboard</h1>
-                <p className="page-subtitle">Track your budget allocation and spending</p>
+                <p className="page-subtitle">
+                  {user?.name ? `Welcome, ${user.name}!` : 'Track your budget allocation and spending'}
+                </p>
               </div>
 
               {/* Stats Grid */}
@@ -384,12 +721,15 @@ const BudgetingApp = () => {
                 />
                 <StatCard
                   title="Savings"
-                  value={income.savings}
-                  total={income.amount}
+                  value={income.amount - totalSpent}
+                  total={income.savings > 0 ? income.savings : income.amount}
                   icon={PiggyBank}
                   gradient="bg-gradient-to-br from-green-500 to-green-600"
-                  subtitle="saved"
+                  subtitle="of target"
                   delay={150}
+                  valueLabel="Saved"
+                  remainingLabel="Remaining"
+                  hideTotal={income.savings <= 0}
                 />
                 <StatCard
                   title="Allocated"
@@ -413,7 +753,7 @@ const BudgetingApp = () => {
 
               {/* Dashboard Grid - Chart and Recent Transactions */}
               <div className="dashboard-grid">
-                <DonutChart data={categoryData} />
+                <DonutChart data={categoryData} unallocated={remaining} />
                 <RecentTransactions
                   transactions={transactions}
                   categories={categories}
@@ -435,6 +775,67 @@ const BudgetingApp = () => {
                 <p className="page-subtitle">Manage your budget buckets and allocations</p>
               </div>
 
+              {/* Budget Summary */}
+              <div className="budget-summary glass-card" style={{
+                padding: '1rem 1.5rem 0.75rem 1.5rem',
+                marginBottom: '1.5rem',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '1rem',
+                borderRadius: '0.75rem',
+                cursor: 'default',
+                userSelect: 'none'
+              }}>
+                <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Total Income</span>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {formatCurrency(income.amount)}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Allocated</span>
+                    <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#7dd3fc' }}>
+                      {formatCurrency(totalAllocated)}
+                    </div>
+                  </div>
+                  <div>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Unallocated</span>
+                    <div style={{
+                      fontSize: '1.25rem',
+                      fontWeight: 600,
+                      color: remaining > 0 ? '#6ee7b7' : remaining < 0 ? '#fca5a5' : 'var(--text-primary)'
+                    }}>
+                      {formatCurrency(remaining)}
+                    </div>
+                  </div>
+                </div>
+                {remaining > 0 && (
+                  <div style={{
+                    padding: '0.5rem 1rem',
+                    background: 'rgba(110, 231, 183, 0.1)',
+                    borderRadius: '0.5rem',
+                    color: '#6ee7b7',
+                    fontSize: '0.875rem'
+                  }}>
+                    {formatCurrency(remaining)} available for new buckets
+                  </div>
+                )}
+                {remaining < 0 && (
+                  <div style={{
+                    padding: '0.5rem 1rem',
+                    background: 'rgba(252, 165, 165, 0.1)',
+                    borderRadius: '0.5rem',
+                    color: '#fca5a5',
+                    fontSize: '0.875rem'
+                  }}>
+                    Over-allocated by {formatCurrency(Math.abs(remaining))}
+                  </div>
+                )}
+              </div>
+
               {/* Filter Bar */}
               <FilterBar
                 filters={[
@@ -449,15 +850,12 @@ const BudgetingApp = () => {
                 searchPlaceholder="Search buckets..."
                 searchValue={searchQuery}
                 onSearchChange={setSearchQuery}
-              />
-
-              {/* Add Bucket Form */}
-              <BucketForm
-                newBucket={newBucket}
-                setNewBucket={setNewBucket}
-                categories={activeCategories}
-                onAdd={addBucket}
-                darkMode={true}
+                onAddClick={() => {
+                  setEditingBucket(undefined);
+                  setNewBucket({ name: "", allocated: 0, categoryId: "" });
+                  setIsBucketModalOpen(true);
+                }}
+                addButtonText="Add Bucket"
               />
 
               {/* Buckets Table */}
@@ -466,9 +864,125 @@ const BudgetingApp = () => {
                 categories={categories}
                 income={income}
                 onDelete={deleteBucket}
+                onEdit={handleEditBucket}
+                onTransferTo={handleTransferTo}
+                onReceiveFrom={handleReceiveFrom}
                 title="Budget Management"
                 subtitle={`${filteredBuckets.length} buckets found`}
               />
+
+              {/* Transfer History */}
+              {transferHistory.length > 0 && (
+                <div className="transfer-history glass-card" style={{
+                  marginTop: '1.5rem',
+                  padding: '1rem 1.5rem',
+                  borderRadius: '0.75rem'
+                }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    marginBottom: '1rem'
+                  }}>
+                    <h3 style={{
+                      fontSize: '1rem',
+                      fontWeight: 600,
+                      color: 'var(--text-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      margin: 0
+                    }}>
+                      Transfer History
+                      <span style={{
+                        fontSize: '0.75rem',
+                        color: 'var(--text-muted)',
+                        fontWeight: 400
+                      }}>
+                        ({transferHistory.length} transfers)
+                      </span>
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setTransferHistory([])}
+                      style={{
+                        padding: '0.25rem 0.5rem',
+                        fontSize: '0.75rem',
+                        background: 'rgba(252, 165, 165, 0.1)',
+                        border: '1px solid rgba(252, 165, 165, 0.2)',
+                        borderRadius: '0.25rem',
+                        color: '#fca5a5',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      Clear History
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                    {transferHistory.slice(0, 5).map((item) => (
+                      <div
+                        key={item.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          padding: '0.75rem 1rem',
+                          background: 'rgba(255, 255, 255, 0.02)',
+                          borderRadius: '0.5rem',
+                          border: '1px solid rgba(255, 255, 255, 0.05)'
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                          <div style={{
+                            width: '32px',
+                            height: '32px',
+                            borderRadius: '50%',
+                            background: 'rgba(139, 92, 246, 0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#a78bfa',
+                            fontSize: '0.875rem'
+                          }}>
+                            →
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
+                              <span style={{ color: '#fca5a5' }}>{item.fromBucketName}</span>
+                              {' → '}
+                              <span style={{ color: '#6ee7b7' }}>{item.toBucketName}</span>
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                              {item.date.toDateString() === new Date().toDateString()
+                                ? `Today at ${item.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                : item.date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' at ' + item.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              }
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{
+                          fontSize: '0.875rem',
+                          fontWeight: 600,
+                          color: '#a78bfa'
+                        }}>
+                          {formatCurrency(item.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {transferHistory.length > 5 && (
+                    <div style={{
+                      textAlign: 'center',
+                      marginTop: '0.75rem',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)'
+                    }}>
+                      +{transferHistory.length - 5} more transfers
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -571,8 +1085,8 @@ const BudgetingApp = () => {
           {activeTab === "settings" && (
             <Settings
               income={income}
-              onUpdateIncome={setIncome}
-              user={user || undefined}
+              onUpdateIncome={handleUpdateIncome}
+              user={user ? { name: user.name, email: user.email } : undefined}
               onLogout={handleLogout}
             />
           )}
@@ -622,7 +1136,6 @@ const BudgetingApp = () => {
       >
         <TransactionFormModal
           transaction={editingTransaction}
-          categories={activeCategories}
           buckets={buckets}
           onSave={handleSaveTransaction}
           onCancel={() => {
@@ -630,6 +1143,193 @@ const BudgetingApp = () => {
             setEditingTransaction(undefined);
           }}
         />
+      </Modal>
+
+      {/* Bucket Edit Modal */}
+      <Modal
+        isOpen={isBucketModalOpen}
+        onClose={cancelBucketEdit}
+        title={editingBucket ? "Edit Bucket" : "Add Bucket"}
+        size="md"
+      >
+        <div className="bucket-edit-form">
+          <div className="form-group">
+            <label className="form-label">Bucket Name</label>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="e.g., Groceries"
+              value={newBucket.name}
+              onChange={(e) => setNewBucket({ ...newBucket, name: e.target.value })}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Allocated Amount</label>
+            <input
+              type="number"
+              className="form-input"
+              placeholder="0.00"
+              value={newBucket.allocated || ""}
+              onChange={(e) => setNewBucket({ ...newBucket, allocated: Number(e.target.value) })}
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">Category</label>
+            <select
+              className="form-select"
+              value={newBucket.categoryId}
+              onChange={(e) => setNewBucket({ ...newBucket, categoryId: e.target.value })}
+            >
+              <option value="">Select Category</option>
+              {activeCategories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="form-actions">
+            <button type="button" className="btn btn-secondary" onClick={cancelBucketEdit}>
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={saveBucket}
+              disabled={!newBucket.name || newBucket.allocated <= 0}
+            >
+              {editingBucket ? 'Update Bucket' : 'Create Bucket'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Transfer Modal */}
+      <Modal
+        isOpen={isTransferModalOpen}
+        onClose={closeTransferModal}
+        title={
+          transferMode === 'to' && transferContextBucket
+            ? `Transfer from ${transferContextBucket.name}`
+            : transferMode === 'from' && transferContextBucket
+            ? `Receive into ${transferContextBucket.name}`
+            : "Transfer Between Buckets"
+        }
+        size="md"
+      >
+        <div className="bucket-edit-form">
+          {/* Context info */}
+          {transferContextBucket && (
+            <div style={{
+              padding: '0.75rem 1rem',
+              background: 'rgba(167, 139, 250, 0.1)',
+              borderRadius: '0.5rem',
+              marginBottom: '1rem',
+              fontSize: '0.875rem',
+              color: 'var(--text-secondary)'
+            }}>
+              {transferMode === 'to' ? (
+                <>Transferring <strong>from</strong> <span style={{ color: '#a78bfa' }}>{transferContextBucket.name}</span> ({formatCurrency(transferContextBucket.allocated)} allocated)</>
+              ) : (
+                <>Receiving <strong>into</strong> <span style={{ color: '#a78bfa' }}>{transferContextBucket.name}</span> ({formatCurrency(transferContextBucket.allocated)} allocated)</>
+              )}
+            </div>
+          )}
+
+          {/* From Bucket - only show selector if not in 'to' mode */}
+          {transferMode !== 'to' && (
+            <div className="form-group">
+              <label className="form-label">From Bucket</label>
+              <select
+                className="form-select"
+                value={transfer.fromBucketId}
+                onChange={(e) => setTransfer({ ...transfer, fromBucketId: e.target.value })}
+              >
+                <option value="">Select source bucket...</option>
+                {buckets.filter(b => b.id !== transfer.toBucketId).map((bucket) => (
+                  <option key={bucket.id} value={bucket.id}>
+                    {bucket.name} ({formatCurrency(bucket.allocated)} allocated)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {/* To Bucket - only show selector if not in 'from' mode */}
+          {transferMode !== 'from' && (
+            <div className="form-group">
+              <label className="form-label">To Bucket</label>
+              <select
+                className="form-select"
+                value={transfer.toBucketId}
+                onChange={(e) => setTransfer({ ...transfer, toBucketId: e.target.value })}
+              >
+                <option value="">Select destination bucket...</option>
+                {buckets.filter(b => b.id !== transfer.fromBucketId).map((bucket) => (
+                  <option key={bucket.id} value={bucket.id}>
+                    {bucket.name} ({formatCurrency(bucket.allocated)} allocated)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          <div className="form-group">
+            <label className="form-label">Amount to Transfer</label>
+            <input
+              type="number"
+              className="form-input"
+              placeholder="0.00"
+              value={transfer.amount || ""}
+              onChange={(e) => setTransfer({ ...transfer, amount: Number(e.target.value) })}
+            />
+            {transfer.fromBucketId && (
+              <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <small style={{ color: 'var(--text-muted)' }}>
+                  Available: {formatCurrency(buckets.find(b => b.id === transfer.fromBucketId)?.allocated || 0)}
+                </small>
+                <button
+                  type="button"
+                  style={{
+                    padding: '0.25rem 0.5rem',
+                    fontSize: '0.75rem',
+                    background: 'rgba(110, 231, 183, 0.15)',
+                    border: '1px solid rgba(110, 231, 183, 0.3)',
+                    borderRadius: '0.25rem',
+                    color: '#6ee7b7',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={() => {
+                    const fromBucket = buckets.find(b => b.id === transfer.fromBucketId);
+                    if (fromBucket) {
+                      setTransfer({ ...transfer, amount: fromBucket.allocated });
+                    }
+                  }}
+                >
+                  Transfer All
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={closeTransferModal}
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleTransfer}
+              disabled={!transfer.fromBucketId || !transfer.toBucketId || transfer.amount <= 0}
+            >
+              Transfer
+            </button>
+          </div>
+        </div>
       </Modal>
 
       {/* Delete Confirmation Dialog */}

@@ -11,6 +11,9 @@ interface StatCardProps {
   subtitle?: string;
   showProgress?: boolean;
   delay?: number;
+  valueLabel?: string;  // Label for the value row (default: "Used")
+  remainingLabel?: string;  // Label for the remaining row (default: "Available")
+  hideTotal?: boolean;  // Hide the /total in the value row
 }
 
 // Custom hook for counting animation - syncs with progress ring
@@ -78,7 +81,10 @@ const StatCard = ({
   gradient,
   subtitle,
   showProgress = true,
-  delay = 0
+  delay = 0,
+  valueLabel = "Used",
+  remainingLabel = "Available",
+  hideTotal = false
 }: StatCardProps) => {
   const { formatCurrency } = useTheme();
   const { count: animatedValue, progress, ref } = useCountAnimation(value, 1500, delay);
@@ -162,7 +168,7 @@ const StatCard = ({
             <span className="stat-value-large" style={{ color: color.main }}>
               {formatCurrency(animatedValue)}
             </span>
-            {total && total !== 100 && (
+            {!hideTotal && total && total !== 100 && (
               <span className="stat-total">/{formatCurrency(total)}</span>
             )}
           </div>
@@ -170,12 +176,12 @@ const StatCard = ({
           <div className="stat-details">
             <div className="stat-detail-row">
               <span className="stat-detail-dot" style={{ background: color.main }} />
-              <span className="stat-detail-label">Used</span>
+              <span className="stat-detail-label">{valueLabel}</span>
               <span className="stat-detail-value">{formatCurrency(animatedValue)}</span>
             </div>
             <div className="stat-detail-row">
               <span className="stat-detail-dot stat-detail-dot-available" />
-              <span className="stat-detail-label">Available</span>
+              <span className="stat-detail-label">{remainingLabel}</span>
               <span className="stat-detail-value">{formatCurrency(total - animatedValue)}</span>
             </div>
           </div>

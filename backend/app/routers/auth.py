@@ -8,6 +8,7 @@ from ..models.user import User
 from ..schemas.user import UserCreate, UserResponse, UserLogin
 from ..schemas.auth import Token
 from ..utils.security import hash_password, verify_password, create_tokens, decode_token
+from ..services.seed_data import seed_user_data
 
 router = APIRouter()
 
@@ -34,6 +35,10 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
     db.add(new_user)
     await db.commit()
+    await db.refresh(new_user)
+
+    # Seed initial data for specific users
+    await seed_user_data(db, new_user)
     await db.refresh(new_user)
 
     return new_user

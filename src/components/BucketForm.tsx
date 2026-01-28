@@ -31,6 +31,7 @@ const BucketForm = ({
         <label className="form-label">Bucket Name</label>
         <input
           type="text"
+          className="form-input"
           placeholder="e.g., Groceries"
           value={newBucket.name}
           onChange={(e) => setNewBucket({ ...newBucket, name: e.target.value })}
@@ -40,6 +41,7 @@ const BucketForm = ({
         <label className="form-label">Allocated Amount</label>
         <input
           type="number"
+          className="form-input"
           placeholder="0.00"
           value={newBucket.allocated || ""}
           onChange={(e) =>
@@ -50,6 +52,7 @@ const BucketForm = ({
       <div className="form-group">
         <label className="form-label">Category</label>
         <select
+          className="form-select"
           value={newBucket.categoryId}
           onChange={(e) =>
             setNewBucket({ ...newBucket, categoryId: e.target.value })
@@ -65,7 +68,7 @@ const BucketForm = ({
       </div>
       <div className="form-group">
         <label className="form-label">&nbsp;</label>
-        <button onClick={onAdd} className="form-button">
+        <button type="button" onClick={onAdd} className="form-button">
           <Plus className="h-5 w-5" />
           <span>Add Bucket</span>
         </button>

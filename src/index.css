@@ -803,7 +803,7 @@ body {
   -webkit-backdrop-filter: blur(16px);
   border: 1px solid var(--glass-border);
   border-radius: var(--border-radius-lg);
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
   cursor: default;
 }
@@ -846,7 +846,7 @@ body {
 }
 
 .data-table-wrapper {
-  overflow-x: auto;
+  overflow: visible;
 }
 
 .data-table {
@@ -998,6 +998,195 @@ body {
   color: var(--accent-red);
   background: rgba(252, 165, 165, 0.15);
   transform: scale(1.1);
+}
+
+.action-btn-more:hover {
+  background: rgba(167, 139, 250, 0.15);
+  color: var(--accent-purple);
+}
+
+/* Action Menu Dropdown */
+.action-menu-container {
+  position: relative;
+  display: inline-flex;
+  z-index: 99999;
+}
+
+.action-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 180px;
+  background-color: #0d0d14;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.4),
+    0 10px 40px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(0, 0, 0, 0.5);
+  z-index: 99999;
+  overflow: visible;
+  animation: dropdownFadeIn 0.15s ease;
+  /* Reset inherited backdrop-filter */
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  /* Force new stacking context without blur inheritance */
+  isolation: isolate;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Solid background layer to block glass effect from parent */
+.action-dropdown::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #0d0d14;
+  border-radius: 8px;
+  z-index: -1;
+}
+
+/* Ensure dropdown appears above table rows */
+.data-table tr {
+  position: relative;
+  z-index: 1;
+}
+
+.data-table tr:hover {
+  z-index: 2;
+}
+
+.action-buttons {
+  position: relative;
+  z-index: 10;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) translateZ(0);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateZ(0);
+  }
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #e0e0e0;
+  background-color: #0d0d14;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  text-align: left;
+  position: relative;
+  z-index: 1;
+  -webkit-tap-highlight-color: transparent;
+  /* Ensure clickable */
+  pointer-events: auto;
+}
+
+/* Ensure icons and text don't block clicks */
+.dropdown-item > * {
+  pointer-events: none;
+}
+
+.dropdown-item:hover {
+  background: #1a1a2e !important;
+  color: #ffffff;
+}
+
+.dropdown-item:active {
+  background: #252538 !important;
+}
+
+.dropdown-item:first-child {
+  border-radius: 7px 7px 0 0;
+}
+
+.dropdown-item:last-child {
+  border-radius: 0 0 7px 7px;
+}
+
+.dropdown-item:only-child {
+  border-radius: 7px;
+}
+
+/* Portal-based dropdown - renders at document body level */
+.action-dropdown-portal {
+  min-width: 180px;
+  background-color: #0d0d14;
+  border: 1px solid rgba(139, 92, 246, 0.5);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 6px rgba(0, 0, 0, 0.4),
+    0 10px 40px rgba(0, 0, 0, 0.9);
+  z-index: 999999;
+  overflow: hidden;
+  animation: dropdownFadeIn 0.15s ease;
+}
+
+.action-dropdown-portal .dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #e0e0e0;
+  background-color: #0d0d14;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  text-align: left;
+}
+
+.action-dropdown-portal .dropdown-item:hover {
+  background-color: #1a1a2e;
+  color: #ffffff;
+}
+
+.action-dropdown-portal .dropdown-item:active {
+  background-color: #252538;
+}
+
+.action-dropdown-portal .dropdown-item > * {
+  pointer-events: none;
+}
+
+.action-dropdown-portal .dropdown-item:first-child {
+  border-radius: 7px 7px 0 0;
+}
+
+.action-dropdown-portal .dropdown-item:last-child {
+  border-radius: 0 0 7px 7px;
+}
+
+.action-dropdown-portal .dropdown-item:only-child {
+  border-radius: 7px;
+}
+
+.dropdown-item svg {
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  color: #9ca3af;
+  pointer-events: none;
+}
+
+.dropdown-item span {
+  pointer-events: none;
+  flex: 1;
+}
+
+.dropdown-item:hover svg {
+  color: #a78bfa;
 }
 
 /* Table Footer */

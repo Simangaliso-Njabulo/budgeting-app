@@ -261,12 +261,10 @@ const SwipeableTransactionItem = ({
           <div className="transaction-item-info">
             <span className="transaction-item-description">{transaction.description}</span>
             <div className="transaction-item-meta">
-              <span className="transaction-item-category">{category?.name}</span>
-              {bucket && (
-                <>
-                  <span className="transaction-item-separator">•</span>
-                  <span className="transaction-item-bucket">{bucket.name}</span>
-                </>
+              {isExpense ? (
+                <span className="transaction-item-bucket">{bucket?.name || 'No bucket'}</span>
+              ) : (
+                <span className="transaction-item-category">{category?.name || 'Income'}</span>
               )}
             </div>
           </div>

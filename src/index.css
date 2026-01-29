@@ -2328,7 +2328,7 @@ select option {
 
 .toast {
   position: fixed;
-  bottom: 24px;
+  bottom: 80px;
   right: 24px;
   display: flex;
   align-items: center;
@@ -3089,6 +3089,39 @@ select option {
 
 .date-input {
   padding-left: 40px !important;
+}
+
+.date-quick-options {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+
+.date-quick-btn {
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.date-quick-btn:hover {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: var(--accent-purple);
+  color: var(--text-primary);
+}
+
+.date-quick-btn.active {
+  background: rgba(167, 139, 250, 0.15);
+  border-color: var(--accent-purple);
+  color: var(--accent-purple);
 }
 
 /* Transaction Filters */

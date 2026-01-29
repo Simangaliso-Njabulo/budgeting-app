@@ -166,6 +166,28 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
             onChange={(e) => setForm({ ...form, date: new Date(e.target.value) })}
           />
         </div>
+        <div className="date-quick-options">
+          {[
+            { label: 'Today', days: 0 },
+            { label: 'Yesterday', days: 1 },
+            { label: '2 days ago', days: 2 },
+            { label: '3 days ago', days: 3 },
+          ].map(({ label, days }) => {
+            const d = new Date();
+            d.setDate(d.getDate() - days);
+            const isSelected = form.date.toISOString().split('T')[0] === d.toISOString().split('T')[0];
+            return (
+              <button
+                key={days}
+                type="button"
+                className={`date-quick-btn ${isSelected ? 'active' : ''}`}
+                onClick={() => setForm({ ...form, date: d })}
+              >
+                {label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Actions */}

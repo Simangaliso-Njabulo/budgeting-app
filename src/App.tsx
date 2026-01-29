@@ -967,15 +967,14 @@ const BudgetingApp = () => {
                 />
                 <StatCard
                   title="Savings"
-                  value={income.amount - totalSpent}
-                  total={income.savings > 0 ? income.savings : income.amount}
+                  value={income.savings}
+                  total={income.amount}
                   icon={PiggyBank}
                   gradient="bg-gradient-to-br from-green-500 to-green-600"
-                  subtitle="of target"
+                  subtitle="of income"
                   delay={150}
-                  valueLabel="Saved"
-                  remainingLabel="Remaining"
-                  hideTotal={income.savings <= 0}
+                  valueLabel="Target"
+                  remainingLabel="Available to Spend"
                 />
                 <StatCard
                   title="Allocated"

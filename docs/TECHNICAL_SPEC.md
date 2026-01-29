@@ -52,12 +52,45 @@ interface Category {
 }
 ```
 
-### 4. Income (Enhanced)
+### 4. Income (User Defaults)
 ```typescript
 interface Income {
   amount: number;           // Total monthly income
   savings: number;          // Target savings
-  currency: string;         // Default: 'USD'
+  currency?: string;        // Default: 'USD'
+}
+```
+
+### 5. MonthlyIncome (Per-Month Record)
+```typescript
+interface MonthlyIncome {
+  id: string;
+  year: number;             // e.g. 2026
+  month: number;            // 1-12
+  amount: number;           // Income for this month
+  savingsTarget: number;    // Savings target for this month
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+```
+
+### 6. BudgetPeriod (Selected Month)
+```typescript
+interface BudgetPeriod {
+  year: number;
+  month: number;            // 1-12
+}
+```
+
+### 7. MonthlyTrendItem (Trend Data Point)
+```typescript
+interface MonthlyTrendItem {
+  year: number;
+  month: number;
+  income: number;           // Monthly income + income transactions
+  expenses: number;         // Sum of expense transactions
+  savingsTarget: number;
+  net: number;              // income - expenses
 }
 ```
 
@@ -70,6 +103,7 @@ interface Income {
 | **Transaction** | Quick-add modal, Full form | List, Detail view, Filters | Edit modal | Confirm delete |
 | **Bucket** | Form in Buckets tab | Table, Cards | Inline edit, Modal | Confirm delete |
 | **Category** | Modal in Categories tab | Grid/List | Edit modal | Confirm (check dependencies) |
+| **MonthlyIncome** | Auto-created on first access | Via month selector | Modal from month selector | N/A (auto-managed) |
 
 ---
 

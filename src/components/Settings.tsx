@@ -4,14 +4,20 @@ import { Moon, Sun, Coins, Download, Trash2, Check, Wallet, PiggyBank, Shield, L
 import { useTheme, CURRENCIES } from '../context/ThemeContext';
 import type { Income } from '../types';
 
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
 interface SettingsProps {
   income: Income;
   onUpdateIncome: (income: Income) => void;
   user?: { name: string; email: string };
   onLogout?: () => void;
+  selectedPeriod?: { year: number; month: number };
 }
 
-const Settings = ({ income, onUpdateIncome, user, onLogout }: SettingsProps) => {
+const Settings = ({ income, onUpdateIncome, user, onLogout, selectedPeriod }: SettingsProps) => {
   const { theme, setTheme, currency, setCurrency, formatCurrency } = useTheme();
 
   // Store display values with currency symbol
@@ -174,7 +180,7 @@ const Settings = ({ income, onUpdateIncome, user, onLogout }: SettingsProps) => 
           <div className="settings-form-group">
             <label className="settings-form-label">
               <Wallet className="settings-form-icon" />
-              Monthly Income
+              Monthly Income{selectedPeriod ? ` - ${MONTH_NAMES[selectedPeriod.month - 1]} ${selectedPeriod.year}` : ''}
             </label>
             <input
               type="text"

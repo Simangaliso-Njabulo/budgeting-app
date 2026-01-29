@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
-import { Users, Wallet, TrendingUp, PiggyBank, FolderOpen, Receipt } from "lucide-react";
+import {
+  Users,
+  Wallet,
+  TrendingUp,
+  PiggyBank,
+  FolderOpen,
+  Receipt,
+} from "lucide-react";
 
 // Components
 import {
@@ -23,6 +30,8 @@ import {
   TransactionSummary,
   RecentTransactions,
   SpendingTrend,
+  MonthlyTrendChart,
+  MonthSelector,
   Login,
   SignUp,
   ForgotPassword,
@@ -30,13 +39,31 @@ import {
 import type { ToastType } from "./components";
 
 // Types
-import type { Income, Bucket, Category, Transaction, NewCategoryForm, NewTransactionForm } from "./types";
+import type {
+  Income,
+  Bucket,
+  Category,
+  Transaction,
+  NewCategoryForm,
+  NewTransactionForm,
+  BudgetPeriod,
+  MonthlyTrendItem,
+} from "./types";
 
 // Context
 import { useTheme } from "./context/ThemeContext";
 
 // API
-import { authApi, categoriesApi, bucketsApi, transactionsApi, usersApi, getAccessToken, clearTokens } from "./services/api";
+import {
+  authApi,
+  categoriesApi,
+  bucketsApi,
+  transactionsApi,
+  usersApi,
+  monthlyIncomeApi,
+  getAccessToken,
+  clearTokens,
+} from "./services/api";
 
 // User type from API
 interface User {
@@ -56,7 +83,7 @@ const transformCategory = (cat: Record<string, unknown>): Category => ({
   name: cat.name as string,
   color: cat.color as string,
   icon: cat.icon as string | undefined,
-  type: cat.type as 'expense' | 'income' | 'both',
+  type: cat.type as "expense" | "income" | "both",
   isDeleted: cat.is_deleted as boolean,
   deletedAt: cat.deleted_at ? new Date(cat.deleted_at as string) : undefined,
   createdAt: cat.created_at ? new Date(cat.created_at as string) : undefined,
@@ -68,19 +95,23 @@ const transformBucket = (bucket: Record<string, unknown>): Bucket => ({
   name: bucket.name as string,
   allocated: Number(bucket.allocated) || 0,
   actual: 0, // Will be calculated from transactions
-  categoryId: bucket.category_id as string || '',
+  categoryId: (bucket.category_id as string) || "",
   icon: bucket.icon as string | undefined,
   color: bucket.color as string | undefined,
-  createdAt: bucket.created_at ? new Date(bucket.created_at as string) : undefined,
-  updatedAt: bucket.updated_at ? new Date(bucket.updated_at as string) : undefined,
+  createdAt: bucket.created_at
+    ? new Date(bucket.created_at as string)
+    : undefined,
+  updatedAt: bucket.updated_at
+    ? new Date(bucket.updated_at as string)
+    : undefined,
 });
 
 const transformTransaction = (tx: Record<string, unknown>): Transaction => ({
   id: tx.id as string,
   description: tx.description as string,
   amount: Number(tx.amount) || 0,
-  type: tx.type as 'income' | 'expense',
-  categoryId: tx.category_id as string || '',
+  type: tx.type as "income" | "expense",
+  categoryId: (tx.category_id as string) || "",
   bucketId: tx.bucket_id as string | undefined,
   date: new Date(tx.date as string),
   notes: tx.notes as string | undefined,
@@ -94,11 +125,20 @@ const BudgetingApp = () => {
 
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
-  const [authPage, setAuthPage] = useState<'login' | 'signup' | 'forgot'>('login');
+  const [authPage, setAuthPage] = useState<"login" | "signup" | "forgot">(
+    "login",
+  );
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Selected budget period (month/year)
+  const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriod>(() => {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  });
+  const [trendData, setTrendData] = useState<MonthlyTrendItem[]>([]);
 
   // State
   const [income, setIncome] = useState<Income>({ amount: 0, savings: 0 });
@@ -127,35 +167,57 @@ const BudgetingApp = () => {
   const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
   const [isBucketModalOpen, setIsBucketModalOpen] = useState(false);
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | undefined>();
-  const [editingTransaction, setEditingTransaction] = useState<Transaction | undefined>();
+  const [editingCategory, setEditingCategory] = useState<
+    Category | undefined
+  >();
+  const [editingTransaction, setEditingTransaction] = useState<
+    Transaction | undefined
+  >();
   const [editingBucket, setEditingBucket] = useState<Bucket | undefined>();
-  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'category' | 'transaction' | 'bucket'; item: Category | Transaction | Bucket } | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: "category" | "transaction" | "bucket";
+    item: Category | Transaction | Bucket;
+  } | null>(null);
 
   // Transfer state
-  const [transfer, setTransfer] = useState({ fromBucketId: '', toBucketId: '', amount: 0 });
-  const [transferMode, setTransferMode] = useState<'to' | 'from' | null>(null);
-  const [transferContextBucket, setTransferContextBucket] = useState<Bucket | null>(null);
+  const [transfer, setTransfer] = useState({
+    fromBucketId: "",
+    toBucketId: "",
+    amount: 0,
+  });
+  const [transferMode, setTransferMode] = useState<"to" | "from" | null>(null);
+  const [transferContextBucket, setTransferContextBucket] =
+    useState<Bucket | null>(null);
 
   // Transfer history - load from localStorage
-  const [transferHistory, setTransferHistory] = useState<{
-    id: string;
-    fromBucketName: string;
-    toBucketName: string;
-    amount: number;
-    date: Date;
-  }[]>(() => {
+  const [transferHistory, setTransferHistory] = useState<
+    {
+      id: string;
+      fromBucketName: string;
+      toBucketName: string;
+      amount: number;
+      date: Date;
+    }[]
+  >(() => {
     try {
-      const saved = localStorage.getItem('transferHistory');
+      const saved = localStorage.getItem("transferHistory");
       if (saved) {
         const parsed = JSON.parse(saved);
-        return parsed.map((item: { id: string; fromBucketName: string; toBucketName: string; amount: number; date: string }) => ({
-          ...item,
-          date: new Date(item.date)
-        }));
+        return parsed.map(
+          (item: {
+            id: string;
+            fromBucketName: string;
+            toBucketName: string;
+            amount: number;
+            date: string;
+          }) => ({
+            ...item,
+            date: new Date(item.date),
+          }),
+        );
       }
     } catch (e) {
-      console.error('Failed to load transfer history:', e);
+      console.error("Failed to load transfer history:", e);
     }
     return [];
   });
@@ -163,41 +225,94 @@ const BudgetingApp = () => {
   // Save transfer history to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem('transferHistory', JSON.stringify(transferHistory));
+      localStorage.setItem("transferHistory", JSON.stringify(transferHistory));
     } catch (e) {
-      console.error('Failed to save transfer history:', e);
+      console.error("Failed to save transfer history:", e);
     }
   }, [transferHistory]);
 
   // Toast state
-  const [toast, setToast] = useState<{ message: string; type: ToastType; visible: boolean }>({
-    message: '',
-    type: 'success',
+  const [toast, setToast] = useState<{
+    message: string;
+    type: ToastType;
+    visible: boolean;
+  }>({
+    message: "",
+    type: "success",
     visible: false,
   });
 
-  const showToast = (message: string, type: ToastType = 'success') => {
+  const showToast = (message: string, type: ToastType = "success") => {
     setToast({ message, type, visible: true });
   };
 
   // Helper to recalculate bucket spending from transactions
   // Expenses add to spending, income subtracts from spending (adds money back to bucket)
-  const recalculateBucketSpending = useCallback((txList: Transaction[], bucketList: Bucket[]): Bucket[] => {
-    const bucketSpending: Record<string, number> = {};
-    txList.forEach((tx) => {
-      if (tx.bucketId) {
-        if (tx.type === 'expense') {
-          bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
-        } else if (tx.type === 'income') {
-          bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
+  const recalculateBucketSpending = useCallback(
+    (txList: Transaction[], bucketList: Bucket[]): Bucket[] => {
+      const bucketSpending: Record<string, number> = {};
+      txList.forEach((tx) => {
+        if (tx.bucketId) {
+          if (tx.type === "expense") {
+            bucketSpending[tx.bucketId] =
+              (bucketSpending[tx.bucketId] || 0) + tx.amount;
+          } else if (tx.type === "income") {
+            bucketSpending[tx.bucketId] =
+              (bucketSpending[tx.bucketId] || 0) - tx.amount;
+          }
         }
+      });
+      return bucketList.map((b) => ({
+        ...b,
+        actual: Math.max(0, bucketSpending[b.id] || 0), // Don't go negative
+      }));
+    },
+    [],
+  );
+
+  // Fetch monthly income for a given period
+  const fetchMonthlyIncome = useCallback(
+    async (year: number, month: number) => {
+      try {
+        const monthlyData = await monthlyIncomeApi.get(year, month);
+        setIncome({
+          amount: Number(monthlyData.amount) || 0,
+          savings: Number(monthlyData.savings_target) || 0,
+        });
+      } catch {
+        // Fall back to user defaults (already set)
       }
-    });
-    return bucketList.map((b) => ({
-      ...b,
-      actual: Math.max(0, bucketSpending[b.id] || 0), // Don't go negative
-    }));
+    },
+    [],
+  );
+
+  // Fetch trend data
+  const fetchTrends = useCallback(async () => {
+    try {
+      const trendsResponse = await monthlyIncomeApi.getTrends(6);
+      setTrendData(
+        trendsResponse.data.map((item: Record<string, unknown>) => ({
+          year: item.year as number,
+          month: item.month as number,
+          income: Number(item.income) || 0,
+          expenses: Number(item.expenses) || 0,
+          savingsTarget: Number(item.savings_target) || 0,
+          net: Number(item.net) || 0,
+        })),
+      );
+    } catch {
+      // Trends are non-critical
+    }
   }, []);
+
+  // Handle period change from MonthSelector
+  const handlePeriodChange = useCallback(
+    async (year: number, month: number) => {
+      setSelectedPeriod({ year, month });
+      await fetchMonthlyIncome(year, month);
+    },
+    [fetchMonthlyIncome],
+  );
 
   // Fetch all data from API
   const fetchData = useCallback(async () => {
@@ -207,46 +322,85 @@ const BudgetingApp = () => {
       // Fetch user data
       const userData = await authApi.getMe();
       setUser(userData);
+
+      // Set income from user defaults initially
       setIncome({
         amount: Number(userData.monthly_income) || 0,
         savings: Number(userData.savings_target) || 0,
         currency: userData.currency,
       });
 
-      // Fetch categories, buckets, and transactions in parallel
-      const [categoriesData, bucketsData, transactionsData] = await Promise.all([
+      // Fetch categories, buckets, transactions, monthly income, and trends in parallel
+      const now = new Date();
+      const currentYear = now.getFullYear();
+      const currentMonth = now.getMonth() + 1;
+
+      const [
+        categoriesData,
+        bucketsData,
+        transactionsData,
+        monthlyData,
+        trendsResponse,
+      ] = await Promise.all([
         categoriesApi.getAll(),
         bucketsApi.getAll(),
         transactionsApi.getAll(),
+        monthlyIncomeApi.get(currentYear, currentMonth).catch(() => null),
+        monthlyIncomeApi.getTrends(6).catch(() => ({ data: [] })),
       ]);
+
+      // Set monthly income for current period (overrides user defaults)
+      if (monthlyData) {
+        setIncome({
+          amount: Number(monthlyData.amount) || 0,
+          savings: Number(monthlyData.savings_target) || 0,
+        });
+      }
+
+      // Set trend data
+      setTrendData(
+        (trendsResponse.data || []).map((item: Record<string, unknown>) => ({
+          year: item.year as number,
+          month: item.month as number,
+          income: Number(item.income) || 0,
+          expenses: Number(item.expenses) || 0,
+          savingsTarget: Number(item.savings_target) || 0,
+          net: Number(item.net) || 0,
+        })),
+      );
 
       setCategories(categoriesData.map(transformCategory));
 
       // Transform buckets and calculate actual spent from transactions
       const transformedBuckets = bucketsData.map(transformBucket);
-      const transformedTransactions = transactionsData.map(transformTransaction);
+      const transformedTransactions =
+        transactionsData.map(transformTransaction);
 
       // Calculate actual spent per bucket (expenses add, income subtracts)
       const bucketSpending: Record<string, number> = {};
       transformedTransactions.forEach((tx: Transaction) => {
         if (tx.bucketId) {
-          if (tx.type === 'expense') {
-            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
-          } else if (tx.type === 'income') {
-            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
+          if (tx.type === "expense") {
+            bucketSpending[tx.bucketId] =
+              (bucketSpending[tx.bucketId] || 0) + tx.amount;
+          } else if (tx.type === "income") {
+            bucketSpending[tx.bucketId] =
+              (bucketSpending[tx.bucketId] || 0) - tx.amount;
           }
         }
       });
 
-      setBuckets(transformedBuckets.map((b: Bucket) => ({
-        ...b,
-        actual: Math.max(0, bucketSpending[b.id] || 0),
-      })));
+      setBuckets(
+        transformedBuckets.map((b: Bucket) => ({
+          ...b,
+          actual: Math.max(0, bucketSpending[b.id] || 0),
+        })),
+      );
 
       setTransactions(transformedTransactions);
     } catch (error) {
-      console.error('Failed to fetch data:', error);
-      showToast('Failed to load data', 'error');
+      console.error("Failed to fetch data:", error);
+      showToast("Failed to load data", "error");
     } finally {
       setIsLoading(false);
     }
@@ -275,20 +429,24 @@ const BudgetingApp = () => {
       await authApi.login(email, password);
       await fetchData();
       setIsAuthenticated(true);
-      showToast('Welcome back!', 'success');
+      showToast("Welcome back!", "success");
     } catch (error) {
       throw error;
     }
   };
 
-  const handleSignUp = async (name: string, email: string, password: string) => {
+  const handleSignUp = async (
+    name: string,
+    email: string,
+    password: string,
+  ) => {
     try {
       await authApi.register(name, email, password);
       // Auto-login after registration
       await authApi.login(email, password);
       await fetchData();
       setIsAuthenticated(true);
-      showToast('Account created successfully!', 'success');
+      showToast("Account created successfully!", "success");
     } catch (error) {
       throw error;
     }
@@ -296,22 +454,24 @@ const BudgetingApp = () => {
 
   const handleForgotPassword = async (_email: string) => {
     // Backend doesn't have this yet - show message
-    showToast('Password reset is not yet implemented', 'info');
+    showToast("Password reset is not yet implemented", "info");
   };
 
-  const handleSocialLogin = async (provider: 'google' | 'facebook' | 'apple') => {
-    showToast(`${provider} login is not yet implemented`, 'info');
+  const handleSocialLogin = async (
+    provider: "google" | "facebook" | "apple",
+  ) => {
+    showToast(`${provider} login is not yet implemented`, "info");
   };
 
   const handleLogout = () => {
     authApi.logout();
     setUser(null);
     setIsAuthenticated(false);
-    setAuthPage('login');
+    setAuthPage("login");
     setBuckets([]);
     setCategories([]);
     setTransactions([]);
-    showToast('Signed out successfully', 'info');
+    showToast("Signed out successfully", "info");
   };
 
   // Delete bucket
@@ -348,9 +508,11 @@ const BudgetingApp = () => {
             category_id: newBucket.categoryId || undefined,
           });
           const bucket = transformBucket(updated);
-          setBuckets(buckets.map(b =>
-            b.id === editingBucket.id ? { ...bucket, actual: b.actual } : b
-          ));
+          setBuckets(
+            buckets.map((b) =>
+              b.id === editingBucket.id ? { ...bucket, actual: b.actual } : b,
+            ),
+          );
           showToast("Bucket updated successfully!");
         } else {
           // Create new bucket
@@ -367,7 +529,10 @@ const BudgetingApp = () => {
         setEditingBucket(undefined);
         setIsBucketModalOpen(false);
       } catch {
-        showToast(editingBucket ? "Failed to update bucket" : "Failed to create bucket", "error");
+        showToast(
+          editingBucket ? "Failed to update bucket" : "Failed to create bucket",
+          "error",
+        );
       }
     }
   };
@@ -382,8 +547,8 @@ const BudgetingApp = () => {
   // Transfer between buckets
   const handleTransfer = async () => {
     if (transfer.fromBucketId && transfer.toBucketId && transfer.amount > 0) {
-      const fromBucket = buckets.find(b => b.id === transfer.fromBucketId);
-      const toBucket = buckets.find(b => b.id === transfer.toBucketId);
+      const fromBucket = buckets.find((b) => b.id === transfer.fromBucketId);
+      const toBucket = buckets.find((b) => b.id === transfer.toBucketId);
 
       if (!fromBucket || !toBucket) {
         showToast("Invalid buckets selected", "error");
@@ -402,27 +567,32 @@ const BudgetingApp = () => {
         ]);
 
         // Update local state
-        setBuckets(buckets.map(b => {
-          if (b.id === fromBucket.id) {
-            return { ...b, allocated: b.allocated - transfer.amount };
-          }
-          if (b.id === toBucket.id) {
-            return { ...b, allocated: b.allocated + transfer.amount };
-          }
-          return b;
-        }));
+        setBuckets(
+          buckets.map((b) => {
+            if (b.id === fromBucket.id) {
+              return { ...b, allocated: b.allocated - transfer.amount };
+            }
+            if (b.id === toBucket.id) {
+              return { ...b, allocated: b.allocated + transfer.amount };
+            }
+            return b;
+          }),
+        );
 
         // Add to transfer history
-        setTransferHistory(prev => [{
-          id: Date.now().toString(),
-          fromBucketName: fromBucket.name,
-          toBucketName: toBucket.name,
-          amount: transfer.amount,
-          date: new Date(),
-        }, ...prev]);
+        setTransferHistory((prev) => [
+          {
+            id: Date.now().toString(),
+            fromBucketName: fromBucket.name,
+            toBucketName: toBucket.name,
+            amount: transfer.amount,
+            date: new Date(),
+          },
+          ...prev,
+        ]);
 
         showToast(`Transferred successfully!`, "success");
-        setTransfer({ fromBucketId: '', toBucketId: '', amount: 0 });
+        setTransfer({ fromBucketId: "", toBucketId: "", amount: 0 });
         setTransferMode(null);
         setTransferContextBucket(null);
         setIsTransferModalOpen(false);
@@ -434,23 +604,23 @@ const BudgetingApp = () => {
 
   // Handle "Transfer to" from bucket context menu
   const handleTransferTo = (bucket: Bucket) => {
-    setTransferMode('to');
+    setTransferMode("to");
     setTransferContextBucket(bucket);
-    setTransfer({ fromBucketId: bucket.id, toBucketId: '', amount: 0 });
+    setTransfer({ fromBucketId: bucket.id, toBucketId: "", amount: 0 });
     setIsTransferModalOpen(true);
   };
 
   // Handle "Receive from" from bucket context menu
   const handleReceiveFrom = (bucket: Bucket) => {
-    setTransferMode('from');
+    setTransferMode("from");
     setTransferContextBucket(bucket);
-    setTransfer({ fromBucketId: '', toBucketId: bucket.id, amount: 0 });
+    setTransfer({ fromBucketId: "", toBucketId: bucket.id, amount: 0 });
     setIsTransferModalOpen(true);
   };
 
   // Close transfer modal and reset state
   const closeTransferModal = () => {
-    setTransfer({ fromBucketId: '', toBucketId: '', amount: 0 });
+    setTransfer({ fromBucketId: "", toBucketId: "", amount: 0 });
     setTransferMode(null);
     setTransferContextBucket(null);
     setIsTransferModalOpen(false);
@@ -466,9 +636,11 @@ const BudgetingApp = () => {
           icon: data.icon,
           type: data.type,
         });
-        setCategories(categories.map(c =>
-          c.id === editingCategory.id ? transformCategory(updated) : c
-        ));
+        setCategories(
+          categories.map((c) =>
+            c.id === editingCategory.id ? transformCategory(updated) : c,
+          ),
+        );
         showToast("Category updated successfully!");
       } else {
         const created = await categoriesApi.create({
@@ -493,15 +665,15 @@ const BudgetingApp = () => {
   };
 
   const handleDeleteCategory = (category: Category) => {
-    setDeleteConfirm({ type: 'category', item: category });
+    setDeleteConfirm({ type: "category", item: category });
   };
 
   const confirmDeleteCategory = async () => {
-    if (deleteConfirm?.type === 'category') {
+    if (deleteConfirm?.type === "category") {
       const category = deleteConfirm.item as Category;
       try {
         await categoriesApi.delete(category.id);
-        setCategories(categories.filter(c => c.id !== category.id));
+        setCategories(categories.filter((c) => c.id !== category.id));
         showToast("Category deleted", "info");
       } catch {
         showToast("Failed to delete category", "error");
@@ -517,7 +689,7 @@ const BudgetingApp = () => {
         description: data.description,
         amount: data.amount,
         type: data.type,
-        date: data.date.toISOString().split('T')[0],
+        date: data.date.toISOString().split("T")[0],
         category_id: data.categoryId || undefined,
         bucket_id: data.bucketId || undefined,
         notes: data.notes,
@@ -526,10 +698,13 @@ const BudgetingApp = () => {
       let updatedTransactions: Transaction[];
 
       if (editingTransaction) {
-        const updated = await transactionsApi.update(editingTransaction.id, apiData);
+        const updated = await transactionsApi.update(
+          editingTransaction.id,
+          apiData,
+        );
         const transformedTx = transformTransaction(updated);
-        updatedTransactions = transactions.map(t =>
-          t.id === editingTransaction.id ? transformedTx : t
+        updatedTransactions = transactions.map((t) =>
+          t.id === editingTransaction.id ? transformedTx : t,
         );
         setTransactions(updatedTransactions);
         showToast("Transaction updated successfully!");
@@ -557,15 +732,17 @@ const BudgetingApp = () => {
   };
 
   const handleDeleteTransaction = (transaction: Transaction) => {
-    setDeleteConfirm({ type: 'transaction', item: transaction });
+    setDeleteConfirm({ type: "transaction", item: transaction });
   };
 
   const confirmDeleteTransaction = async () => {
-    if (deleteConfirm?.type === 'transaction') {
+    if (deleteConfirm?.type === "transaction") {
       const transaction = deleteConfirm.item as Transaction;
       try {
         await transactionsApi.delete(transaction.id);
-        const updatedTransactions = transactions.filter(t => t.id !== transaction.id);
+        const updatedTransactions = transactions.filter(
+          (t) => t.id !== transaction.id,
+        );
         setTransactions(updatedTransactions);
 
         // Recalculate all bucket spending
@@ -579,14 +756,21 @@ const BudgetingApp = () => {
     setDeleteConfirm(null);
   };
 
-  // Update income settings
+  // Update income settings (saves to both user defaults and current month)
   const handleUpdateIncome = async (newIncome: Income) => {
     try {
-      await usersApi.updateMe({
-        monthly_income: newIncome.amount,
-        savings_target: newIncome.savings,
-      });
+      await Promise.all([
+        usersApi.updateMe({
+          monthly_income: newIncome.amount,
+          savings_target: newIncome.savings,
+        }),
+        monthlyIncomeApi.update(selectedPeriod.year, selectedPeriod.month, {
+          amount: newIncome.amount,
+          savings_target: newIncome.savings,
+        }),
+      ]);
       setIncome(newIncome);
+      fetchTrends(); // Refresh trend data
       showToast("Settings updated!", "success");
     } catch {
       showToast("Failed to update settings", "error");
@@ -595,40 +779,80 @@ const BudgetingApp = () => {
 
   // Filtered buckets
   const filteredBuckets = buckets.filter((bucket) => {
-    const matchesSearch = bucket.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || bucket.categoryId === categoryFilter;
+    const matchesSearch = bucket.name
+      .toLowerCase()
+      .includes(searchQuery.toLowerCase());
+    const matchesCategory =
+      !categoryFilter || bucket.categoryId === categoryFilter;
     return matchesSearch && matchesCategory;
   });
 
   // Filtered transactions
   const filteredTransactions = transactions.filter((tx) => {
-    const matchesSearch = tx.description.toLowerCase().includes(txSearchQuery.toLowerCase());
-    const matchesCategory = !txCategoryFilter || tx.categoryId === txCategoryFilter;
+    const matchesSearch = tx.description
+      .toLowerCase()
+      .includes(txSearchQuery.toLowerCase());
+    const matchesCategory =
+      !txCategoryFilter || tx.categoryId === txCategoryFilter;
     const matchesType = !txTypeFilter || tx.type === txTypeFilter;
     const txDate = new Date(tx.date);
-    const matchesDateStart = !txDateRange.start || txDate >= new Date(txDateRange.start);
-    const matchesDateEnd = !txDateRange.end || txDate <= new Date(txDateRange.end);
-    return matchesSearch && matchesCategory && matchesType && matchesDateStart && matchesDateEnd;
+    const matchesDateStart =
+      !txDateRange.start || txDate >= new Date(txDateRange.start);
+    const matchesDateEnd =
+      !txDateRange.end || txDate <= new Date(txDateRange.end);
+    return (
+      matchesSearch &&
+      matchesCategory &&
+      matchesType &&
+      matchesDateStart &&
+      matchesDateEnd
+    );
+  });
+
+  // Transactions filtered to the selected period (for dashboard)
+  const periodTransactions = transactions.filter((tx) => {
+    const txDate = new Date(tx.date);
+    return (
+      txDate.getFullYear() === selectedPeriod.year &&
+      txDate.getMonth() + 1 === selectedPeriod.month
+    );
   });
 
   // Computed values for dashboard
-  const totalAllocated = buckets.reduce((sum, bucket) => sum + bucket.allocated, 0);
-  const totalSpent = buckets.reduce((sum, bucket) => sum + bucket.actual, 0);
+  const totalAllocated = buckets.reduce(
+    (sum, bucket) => sum + bucket.allocated,
+    0,
+  );
+  const periodSpent = periodTransactions
+    .filter((tx) => tx.type === "expense")
+    .reduce((sum, tx) => sum + tx.amount, 0);
+  const totalSpent = periodSpent;
   const remaining = income.amount - totalAllocated;
 
   // Active categories (not deleted)
-  const activeCategories = categories.filter(c => !c.isDeleted);
+  const activeCategories = categories.filter((c) => !c.isDeleted);
 
   const categoryData = activeCategories.map((category) => {
-    const categoryBuckets = buckets.filter((bucket) => bucket.categoryId === category.id);
-    const catAllocated = categoryBuckets.reduce((sum, bucket) => sum + bucket.allocated, 0);
-    const catActual = categoryBuckets.reduce((sum, bucket) => sum + bucket.actual, 0);
+    const categoryBuckets = buckets.filter(
+      (bucket) => bucket.categoryId === category.id,
+    );
+    const catAllocated = categoryBuckets.reduce(
+      (sum, bucket) => sum + bucket.allocated,
+      0,
+    );
+    const catActual = categoryBuckets.reduce(
+      (sum, bucket) => sum + bucket.actual,
+      0,
+    );
 
     return {
       name: category.name,
       allocated: catAllocated,
       actual: catActual,
-      percentage: income.amount > 0 ? ((catAllocated / income.amount) * 100).toFixed(1) : "0",
+      percentage:
+        income.amount > 0
+          ? ((catAllocated / income.amount) * 100).toFixed(1)
+          : "0",
       color: category.color,
     };
   });
@@ -636,18 +860,29 @@ const BudgetingApp = () => {
   // Show loading state
   if (isLoading && isAuthenticated) {
     return (
-      <div className="app-layout" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div style={{ textAlign: 'center' }}>
-          <div className="spinner" style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid rgba(139, 92, 246, 0.2)',
-            borderTop: '4px solid #8b5cf6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px'
-          }} />
-          <p style={{ color: '#9ca3af' }}>Loading your budget...</p>
+      <div
+        className="app-layout"
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "100vh",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div
+            className="spinner"
+            style={{
+              width: "40px",
+              height: "40px",
+              border: "4px solid rgba(139, 92, 246, 0.2)",
+              borderTop: "4px solid #8b5cf6",
+              borderRadius: "50%",
+              animation: "spin 1s linear infinite",
+              margin: "0 auto 16px",
+            }}
+          />
+          <p style={{ color: "#9ca3af" }}>Loading your budget...</p>
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
         </div>
       </div>
@@ -656,21 +891,21 @@ const BudgetingApp = () => {
 
   // Show auth pages if not authenticated
   if (!isAuthenticated) {
-    if (authPage === 'signup') {
+    if (authPage === "signup") {
       return (
         <SignUp
           onSignUp={handleSignUp}
-          onNavigate={() => setAuthPage('login')}
+          onNavigate={() => setAuthPage("login")}
           onSocialLogin={handleSocialLogin}
         />
       );
     }
 
-    if (authPage === 'forgot') {
+    if (authPage === "forgot") {
       return (
         <ForgotPassword
           onResetPassword={handleForgotPassword}
-          onNavigate={() => setAuthPage('login')}
+          onNavigate={() => setAuthPage("login")}
         />
       );
     }
@@ -704,9 +939,20 @@ const BudgetingApp = () => {
               <div className="page-header">
                 <h1 className="page-title">Dashboard</h1>
                 <p className="page-subtitle">
-                  {user?.name ? `Welcome, ${user.name}!` : 'Track your budget allocation and spending'}
+                  {user?.name
+                    ? `Welcome, ${user.name}!`
+                    : "Track your budget allocation and spending"}
                 </p>
               </div>
+
+              {/* Month Selector */}
+              <MonthSelector
+                year={selectedPeriod.year}
+                month={selectedPeriod.month}
+                onChange={handlePeriodChange}
+                income={income}
+                onUpdateIncome={handleUpdateIncome}
+              />
 
               {/* Stats Grid */}
               <div className="stats-grid">
@@ -755,15 +1001,19 @@ const BudgetingApp = () => {
               <div className="dashboard-grid">
                 <DonutChart data={categoryData} unallocated={remaining} />
                 <RecentTransactions
-                  transactions={transactions}
+                  transactions={periodTransactions}
                   categories={categories}
                   onViewAll={() => setActiveTab("transactions")}
                   limit={5}
                 />
               </div>
 
-              {/* Spending Trend */}
-              <SpendingTrend transactions={transactions} days={7} />
+              {/* Monthly Trends */}
+              {trendData.length > 0 ? (
+                <MonthlyTrendChart data={trendData} />
+              ) : (
+                <SpendingTrend transactions={periodTransactions} days={7} />
+              )}
             </div>
           )}
 
@@ -772,65 +1022,46 @@ const BudgetingApp = () => {
             <div className="page-content">
               <div className="page-header">
                 <h1 className="page-title">Buckets</h1>
-                <p className="page-subtitle">Manage your budget buckets and allocations</p>
+                <p className="page-subtitle">
+                  Manage your budget buckets and allocations
+                </p>
               </div>
 
               {/* Budget Summary */}
-              <div className="budget-summary glass-card" style={{
-                padding: '1rem 1.5rem 0.75rem 1.5rem',
-                marginBottom: '1.5rem',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '1rem',
-                borderRadius: '0.75rem',
-                cursor: 'default',
-                userSelect: 'none'
-              }}>
-                <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
+              <div className="budget-summary glass-card">
+                <div className="budget-summary-stats">
                   <div>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Total Income</span>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    <span className="budget-summary-label">Total Income</span>
+                    <div className="budget-summary-value">
                       {formatCurrency(income.amount)}
                     </div>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Allocated</span>
-                    <div style={{ fontSize: '1.25rem', fontWeight: 600, color: '#7dd3fc' }}>
+                    <span className="budget-summary-label">Allocated</span>
+                    <div className="budget-summary-value budget-summary-value--allocated">
                       {formatCurrency(totalAllocated)}
                     </div>
                   </div>
                   <div>
-                    <span style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>Unallocated</span>
-                    <div style={{
-                      fontSize: '1.25rem',
-                      fontWeight: 600,
-                      color: remaining > 0 ? '#6ee7b7' : remaining < 0 ? '#fca5a5' : 'var(--text-primary)'
-                    }}>
+                    <span className="budget-summary-label">Unallocated</span>
+                    <div className={`budget-summary-value ${
+                      remaining > 0
+                        ? "budget-summary-value--positive"
+                        : remaining < 0
+                          ? "budget-summary-value--negative"
+                          : ""
+                    }`}>
                       {formatCurrency(remaining)}
                     </div>
                   </div>
                 </div>
                 {remaining > 0 && (
-                  <div style={{
-                    padding: '0.5rem 1rem',
-                    background: 'rgba(110, 231, 183, 0.1)',
-                    borderRadius: '0.5rem',
-                    color: '#6ee7b7',
-                    fontSize: '0.875rem'
-                  }}>
+                  <div className="budget-summary-badge budget-summary-badge--positive">
                     {formatCurrency(remaining)} available for new buckets
                   </div>
                 )}
                 {remaining < 0 && (
-                  <div style={{
-                    padding: '0.5rem 1rem',
-                    background: 'rgba(252, 165, 165, 0.1)',
-                    borderRadius: '0.5rem',
-                    color: '#fca5a5',
-                    fontSize: '0.875rem'
-                  }}>
+                  <div className="budget-summary-badge budget-summary-badge--negative">
                     Over-allocated by {formatCurrency(Math.abs(remaining))}
                   </div>
                 )}
@@ -842,7 +1073,10 @@ const BudgetingApp = () => {
                   {
                     id: "category",
                     label: "All Categories",
-                    options: activeCategories.map((c) => ({ id: c.id, label: c.name })),
+                    options: activeCategories.map((c) => ({
+                      id: c.id,
+                      label: c.name,
+                    })),
                     value: categoryFilter,
                     onChange: setCategoryFilter,
                   },
@@ -873,32 +1107,43 @@ const BudgetingApp = () => {
 
               {/* Transfer History */}
               {transferHistory.length > 0 && (
-                <div className="transfer-history glass-card" style={{
-                  marginTop: '1.5rem',
-                  padding: '1rem 1.5rem',
-                  borderRadius: '0.75rem'
-                }}>
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    marginBottom: '1rem'
-                  }}>
-                    <h3 style={{
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      margin: 0
-                    }}>
+                <div
+                  className="transfer-history glass-card"
+                  style={{
+                    marginTop: "1.5rem",
+                    padding: "1rem 1.5rem",
+                    borderRadius: "0.75rem",
+                    cursor: "default",
+                    userSelect: "none",
+                  }}
+                >
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      marginBottom: "1rem",
+                    }}
+                  >
+                    <h3
+                      style={{
+                        fontSize: "1rem",
+                        fontWeight: 600,
+                        color: "var(--text-primary)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        margin: 0,
+                      }}
+                    >
                       Transfer History
-                      <span style={{
-                        fontSize: '0.75rem',
-                        color: 'var(--text-muted)',
-                        fontWeight: 400
-                      }}>
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "var(--text-muted)",
+                          fontWeight: 400,
+                        }}
+                      >
                         ({transferHistory.length} transfers)
                       </span>
                     </h3>
@@ -906,78 +1151,118 @@ const BudgetingApp = () => {
                       type="button"
                       onClick={() => setTransferHistory([])}
                       style={{
-                        padding: '0.25rem 0.5rem',
-                        fontSize: '0.75rem',
-                        background: 'rgba(252, 165, 165, 0.1)',
-                        border: '1px solid rgba(252, 165, 165, 0.2)',
-                        borderRadius: '0.25rem',
-                        color: '#fca5a5',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
+                        padding: "0.25rem 0.5rem",
+                        fontSize: "0.75rem",
+                        background: "rgba(252, 165, 165, 0.1)",
+                        border: "1px solid rgba(252, 165, 165, 0.2)",
+                        borderRadius: "0.25rem",
+                        color: "#fca5a5",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
                       }}
                     >
                       Clear History
                     </button>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem",
+                    }}
+                  >
                     {transferHistory.slice(0, 5).map((item) => (
                       <div
                         key={item.id}
                         style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0.75rem 1rem',
-                          background: 'rgba(255, 255, 255, 0.02)',
-                          borderRadius: '0.5rem',
-                          border: '1px solid rgba(255, 255, 255, 0.05)'
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          padding: "0.75rem 1rem",
+                          background: "rgba(255, 255, 255, 0.02)",
+                          borderRadius: "0.5rem",
+                          border: "1px solid rgba(255, 255, 255, 0.05)",
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                          <div style={{
-                            width: '32px',
-                            height: '32px',
-                            borderRadius: '50%',
-                            background: 'rgba(139, 92, 246, 0.15)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: '#a78bfa',
-                            fontSize: '0.875rem'
-                          }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.75rem",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "32px",
+                              height: "32px",
+                              borderRadius: "50%",
+                              background: "rgba(139, 92, 246, 0.15)",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                              color: "#a78bfa",
+                              fontSize: "0.875rem",
+                            }}
+                          >
                             →
                           </div>
                           <div>
-                            <div style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>
-                              <span style={{ color: '#fca5a5' }}>{item.fromBucketName}</span>
-                              {' → '}
-                              <span style={{ color: '#6ee7b7' }}>{item.toBucketName}</span>
+                            <div
+                              style={{
+                                fontSize: "0.875rem",
+                                color: "var(--text-primary)",
+                              }}
+                            >
+                              <span style={{ color: "#fca5a5" }}>
+                                {item.fromBucketName}
+                              </span>
+                              {" → "}
+                              <span style={{ color: "#6ee7b7" }}>
+                                {item.toBucketName}
+                              </span>
                             </div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                              {item.date.toDateString() === new Date().toDateString()
-                                ? `Today at ${item.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                                : item.date.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' at ' + item.date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                              }
+                            <div
+                              style={{
+                                fontSize: "0.75rem",
+                                color: "var(--text-muted)",
+                              }}
+                            >
+                              {item.date.toDateString() ===
+                              new Date().toDateString()
+                                ? `Today at ${item.date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                                : item.date.toLocaleDateString([], {
+                                    month: "short",
+                                    day: "numeric",
+                                  }) +
+                                  " at " +
+                                  item.date.toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
                             </div>
                           </div>
                         </div>
-                        <div style={{
-                          fontSize: '0.875rem',
-                          fontWeight: 600,
-                          color: '#a78bfa'
-                        }}>
+                        <div
+                          style={{
+                            fontSize: "0.875rem",
+                            fontWeight: 600,
+                            color: "#a78bfa",
+                          }}
+                        >
                           {formatCurrency(item.amount)}
                         </div>
                       </div>
                     ))}
                   </div>
                   {transferHistory.length > 5 && (
-                    <div style={{
-                      textAlign: 'center',
-                      marginTop: '0.75rem',
-                      fontSize: '0.75rem',
-                      color: 'var(--text-muted)'
-                    }}>
+                    <div
+                      style={{
+                        textAlign: "center",
+                        marginTop: "0.75rem",
+                        fontSize: "0.75rem",
+                        color: "var(--text-muted)",
+                      }}
+                    >
                       +{transferHistory.length - 5} more transfers
                     </div>
                   )}
@@ -1088,6 +1373,7 @@ const BudgetingApp = () => {
               onUpdateIncome={handleUpdateIncome}
               user={user ? { name: user.name, email: user.email } : undefined}
               onLogout={handleLogout}
+              selectedPeriod={selectedPeriod}
             />
           )}
         </div>
@@ -1160,7 +1446,9 @@ const BudgetingApp = () => {
               className="form-input"
               placeholder="e.g., Groceries"
               value={newBucket.name}
-              onChange={(e) => setNewBucket({ ...newBucket, name: e.target.value })}
+              onChange={(e) =>
+                setNewBucket({ ...newBucket, name: e.target.value })
+              }
             />
           </div>
           <div className="form-group">
@@ -1170,7 +1458,12 @@ const BudgetingApp = () => {
               className="form-input"
               placeholder="0.00"
               value={newBucket.allocated || ""}
-              onChange={(e) => setNewBucket({ ...newBucket, allocated: Number(e.target.value) })}
+              onChange={(e) =>
+                setNewBucket({
+                  ...newBucket,
+                  allocated: Number(e.target.value),
+                })
+              }
             />
           </div>
           <div className="form-group">
@@ -1178,7 +1471,9 @@ const BudgetingApp = () => {
             <select
               className="form-select"
               value={newBucket.categoryId}
-              onChange={(e) => setNewBucket({ ...newBucket, categoryId: e.target.value })}
+              onChange={(e) =>
+                setNewBucket({ ...newBucket, categoryId: e.target.value })
+              }
             >
               <option value="">Select Category</option>
               {activeCategories.map((category) => (
@@ -1189,7 +1484,11 @@ const BudgetingApp = () => {
             </select>
           </div>
           <div className="form-actions">
-            <button type="button" className="btn btn-secondary" onClick={cancelBucketEdit}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={cancelBucketEdit}
+            >
               Cancel
             </button>
             <button
@@ -1198,7 +1497,7 @@ const BudgetingApp = () => {
               onClick={saveBucket}
               disabled={!newBucket.name || newBucket.allocated <= 0}
             >
-              {editingBucket ? 'Update Bucket' : 'Create Bucket'}
+              {editingBucket ? "Update Bucket" : "Create Bucket"}
             </button>
           </div>
         </div>
@@ -1209,67 +1508,91 @@ const BudgetingApp = () => {
         isOpen={isTransferModalOpen}
         onClose={closeTransferModal}
         title={
-          transferMode === 'to' && transferContextBucket
+          transferMode === "to" && transferContextBucket
             ? `Transfer from ${transferContextBucket.name}`
-            : transferMode === 'from' && transferContextBucket
-            ? `Receive into ${transferContextBucket.name}`
-            : "Transfer Between Buckets"
+            : transferMode === "from" && transferContextBucket
+              ? `Receive into ${transferContextBucket.name}`
+              : "Transfer Between Buckets"
         }
         size="md"
       >
         <div className="bucket-edit-form">
           {/* Context info */}
           {transferContextBucket && (
-            <div style={{
-              padding: '0.75rem 1rem',
-              background: 'rgba(167, 139, 250, 0.1)',
-              borderRadius: '0.5rem',
-              marginBottom: '1rem',
-              fontSize: '0.875rem',
-              color: 'var(--text-secondary)'
-            }}>
-              {transferMode === 'to' ? (
-                <>Transferring <strong>from</strong> <span style={{ color: '#a78bfa' }}>{transferContextBucket.name}</span> ({formatCurrency(transferContextBucket.allocated)} allocated)</>
+            <div
+              style={{
+                padding: "0.75rem 1rem",
+                background: "rgba(167, 139, 250, 0.1)",
+                borderRadius: "0.5rem",
+                marginBottom: "1rem",
+                fontSize: "0.875rem",
+                color: "var(--text-secondary)",
+              }}
+            >
+              {transferMode === "to" ? (
+                <>
+                  Transferring <strong>from</strong>{" "}
+                  <span style={{ color: "#a78bfa" }}>
+                    {transferContextBucket.name}
+                  </span>{" "}
+                  ({formatCurrency(transferContextBucket.allocated)} allocated)
+                </>
               ) : (
-                <>Receiving <strong>into</strong> <span style={{ color: '#a78bfa' }}>{transferContextBucket.name}</span> ({formatCurrency(transferContextBucket.allocated)} allocated)</>
+                <>
+                  Receiving <strong>into</strong>{" "}
+                  <span style={{ color: "#a78bfa" }}>
+                    {transferContextBucket.name}
+                  </span>{" "}
+                  ({formatCurrency(transferContextBucket.allocated)} allocated)
+                </>
               )}
             </div>
           )}
 
           {/* From Bucket - only show selector if not in 'to' mode */}
-          {transferMode !== 'to' && (
+          {transferMode !== "to" && (
             <div className="form-group">
               <label className="form-label">From Bucket</label>
               <select
                 className="form-select"
                 value={transfer.fromBucketId}
-                onChange={(e) => setTransfer({ ...transfer, fromBucketId: e.target.value })}
+                onChange={(e) =>
+                  setTransfer({ ...transfer, fromBucketId: e.target.value })
+                }
               >
                 <option value="">Select source bucket...</option>
-                {buckets.filter(b => b.id !== transfer.toBucketId).map((bucket) => (
-                  <option key={bucket.id} value={bucket.id}>
-                    {bucket.name} ({formatCurrency(bucket.allocated)} allocated)
-                  </option>
-                ))}
+                {buckets
+                  .filter((b) => b.id !== transfer.toBucketId)
+                  .map((bucket) => (
+                    <option key={bucket.id} value={bucket.id}>
+                      {bucket.name} ({formatCurrency(bucket.allocated)}{" "}
+                      allocated)
+                    </option>
+                  ))}
               </select>
             </div>
           )}
 
           {/* To Bucket - only show selector if not in 'from' mode */}
-          {transferMode !== 'from' && (
+          {transferMode !== "from" && (
             <div className="form-group">
               <label className="form-label">To Bucket</label>
               <select
                 className="form-select"
                 value={transfer.toBucketId}
-                onChange={(e) => setTransfer({ ...transfer, toBucketId: e.target.value })}
+                onChange={(e) =>
+                  setTransfer({ ...transfer, toBucketId: e.target.value })
+                }
               >
                 <option value="">Select destination bucket...</option>
-                {buckets.filter(b => b.id !== transfer.fromBucketId).map((bucket) => (
-                  <option key={bucket.id} value={bucket.id}>
-                    {bucket.name} ({formatCurrency(bucket.allocated)} allocated)
-                  </option>
-                ))}
+                {buckets
+                  .filter((b) => b.id !== transfer.fromBucketId)
+                  .map((bucket) => (
+                    <option key={bucket.id} value={bucket.id}>
+                      {bucket.name} ({formatCurrency(bucket.allocated)}{" "}
+                      allocated)
+                    </option>
+                  ))}
               </select>
             </div>
           )}
@@ -1281,29 +1604,47 @@ const BudgetingApp = () => {
               className="form-input"
               placeholder="0.00"
               value={transfer.amount || ""}
-              onChange={(e) => setTransfer({ ...transfer, amount: Number(e.target.value) })}
+              onChange={(e) =>
+                setTransfer({ ...transfer, amount: Number(e.target.value) })
+              }
             />
             {transfer.fromBucketId && (
-              <div style={{ marginTop: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                <small style={{ color: 'var(--text-muted)' }}>
-                  Available: {formatCurrency(buckets.find(b => b.id === transfer.fromBucketId)?.allocated || 0)}
+              <div
+                style={{
+                  marginTop: "0.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.75rem",
+                }}
+              >
+                <small style={{ color: "var(--text-muted)" }}>
+                  Available:{" "}
+                  {formatCurrency(
+                    buckets.find((b) => b.id === transfer.fromBucketId)
+                      ?.allocated || 0,
+                  )}
                 </small>
                 <button
                   type="button"
                   style={{
-                    padding: '0.25rem 0.5rem',
-                    fontSize: '0.75rem',
-                    background: 'rgba(110, 231, 183, 0.15)',
-                    border: '1px solid rgba(110, 231, 183, 0.3)',
-                    borderRadius: '0.25rem',
-                    color: '#6ee7b7',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s ease'
+                    padding: "0.25rem 0.5rem",
+                    fontSize: "0.75rem",
+                    background: "rgba(110, 231, 183, 0.15)",
+                    border: "1px solid rgba(110, 231, 183, 0.3)",
+                    borderRadius: "0.25rem",
+                    color: "#6ee7b7",
+                    cursor: "pointer",
+                    transition: "all 0.2s ease",
                   }}
                   onClick={() => {
-                    const fromBucket = buckets.find(b => b.id === transfer.fromBucketId);
+                    const fromBucket = buckets.find(
+                      (b) => b.id === transfer.fromBucketId,
+                    );
                     if (fromBucket) {
-                      setTransfer({ ...transfer, amount: fromBucket.allocated });
+                      setTransfer({
+                        ...transfer,
+                        amount: fromBucket.allocated,
+                      });
                     }
                   }}
                 >
@@ -1324,7 +1665,11 @@ const BudgetingApp = () => {
               type="button"
               className="btn btn-primary"
               onClick={handleTransfer}
-              disabled={!transfer.fromBucketId || !transfer.toBucketId || transfer.amount <= 0}
+              disabled={
+                !transfer.fromBucketId ||
+                !transfer.toBucketId ||
+                transfer.amount <= 0
+              }
             >
               Transfer
             </button>
@@ -1336,10 +1681,14 @@ const BudgetingApp = () => {
       <ConfirmDialog
         isOpen={deleteConfirm !== null}
         onClose={() => setDeleteConfirm(null)}
-        onConfirm={deleteConfirm?.type === 'category' ? confirmDeleteCategory : confirmDeleteTransaction}
-        title={`Delete ${deleteConfirm?.type === 'category' ? 'Category' : 'Transaction'}`}
+        onConfirm={
+          deleteConfirm?.type === "category"
+            ? confirmDeleteCategory
+            : confirmDeleteTransaction
+        }
+        title={`Delete ${deleteConfirm?.type === "category" ? "Category" : "Transaction"}`}
         message={
-          deleteConfirm?.type === 'category'
+          deleteConfirm?.type === "category"
             ? "Are you sure you want to delete this category? Existing transactions will keep their category reference."
             : "Are you sure you want to delete this transaction? This action cannot be undone."
         }

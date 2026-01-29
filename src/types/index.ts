@@ -91,3 +91,30 @@ export interface NewCategoryForm {
   icon?: string;
   type: 'expense' | 'income' | 'both';
 }
+
+// Monthly income record
+export interface MonthlyIncome {
+  id: string;
+  year: number;
+  month: number;
+  amount: number;
+  savingsTarget: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+// Period selector value
+export interface BudgetPeriod {
+  year: number;
+  month: number; // 1-12
+}
+
+// Trend data point
+export interface MonthlyTrendItem {
+  year: number;
+  month: number;
+  income: number;
+  expenses: number;
+  savingsTarget: number;
+  net: number;
+}

@@ -8,6 +8,9 @@ FastAPI backend for the MyBudgeting personal finance application.
 - User registration and login
 - JWT authentication (access + refresh tokens)
 - Categories, Buckets, and Transactions CRUD
+- Monthly income tracking per user per month
+- Monthly trends endpoint (income vs expenses)
+- Seed data for new user onboarding
 - SQLite database (no extra setup required)
 
 ## Tech Stack
@@ -110,21 +113,24 @@ backend/
 │   │   ├── user.py          # User table
 │   │   ├── category.py      # Category table
 │   │   ├── bucket.py        # Bucket table
-│   │   └── transaction.py   # Transaction table
+│   │   ├── transaction.py   # Transaction table
+│   │   └── monthly_income.py # Monthly income records per user
 │   │
 │   ├── schemas/             # Data validation (what API accepts/returns)
 │   │   ├── auth.py          # Token schemas
 │   │   ├── user.py          # User input/output schemas
 │   │   ├── category.py      # Category schemas
 │   │   ├── bucket.py        # Bucket schemas
-│   │   └── transaction.py   # Transaction schemas
+│   │   ├── transaction.py   # Transaction schemas
+│   │   └── monthly_income.py # Monthly income schemas + trends
 │   │
 │   ├── routers/             # API endpoint definitions
 │   │   ├── auth.py          # /api/auth/* endpoints
 │   │   ├── users.py         # /api/users/* endpoints
 │   │   ├── categories.py    # /api/categories/* endpoints
 │   │   ├── buckets.py       # /api/buckets/* endpoints
-│   │   └── transactions.py  # /api/transactions/* endpoints
+│   │   ├── transactions.py  # /api/transactions/* endpoints
+│   │   └── monthly_income.py # /api/monthly-income/* endpoints
 │   │
 │   └── utils/               # Helper functions
 │       ├── security.py      # Password hashing, JWT creation
@@ -226,6 +232,17 @@ JWT (JSON Web Tokens) are used for authentication:
 | GET | `/{id}` | Get one transaction | Yes |
 | PUT | `/{id}` | Update transaction | Yes |
 | DELETE | `/{id}` | Delete transaction | Yes |
+
+### Monthly Income (`/api/monthly-income`)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/` | List all monthly income records | Yes |
+| GET | `/trends` | Income vs expenses for last N months | Yes |
+| GET | `/{year}/{month}` | Get (or auto-create) income for a month | Yes |
+| PUT | `/{year}/{month}` | Update income for a specific month | Yes |
+
+**Note:** The GET `/{year}/{month}` endpoint uses a "get-or-create" pattern. If no record exists for the given month, it auto-creates one using the user's default `monthly_income` and `savings_target` values.
 
 ## Testing the API with curl
 

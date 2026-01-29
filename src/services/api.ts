@@ -270,6 +270,42 @@ export const transactionsApi = {
   },
 };
 
+// Monthly Income API
+export const monthlyIncomeApi = {
+  getAll: async (year?: number) => {
+    const queryParams = new URLSearchParams();
+    if (year) queryParams.append('year', year.toString());
+    const query = queryParams.toString();
+    const response = await fetchWithAuth(`/monthly-income${query ? `?${query}` : ''}`);
+    if (!response.ok) throw new Error('Failed to fetch monthly incomes');
+    return response.json();
+  },
+
+  get: async (year: number, month: number) => {
+    const response = await fetchWithAuth(`/monthly-income/${year}/${month}`);
+    if (!response.ok) throw new Error('Failed to fetch monthly income');
+    return response.json();
+  },
+
+  update: async (year: number, month: number, data: { amount?: number; savings_target?: number }) => {
+    const response = await fetchWithAuth(`/monthly-income/${year}/${month}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update monthly income');
+    return response.json();
+  },
+
+  getTrends: async (months?: number) => {
+    const queryParams = new URLSearchParams();
+    if (months) queryParams.append('months', months.toString());
+    const query = queryParams.toString();
+    const response = await fetchWithAuth(`/monthly-income/trends${query ? `?${query}` : ''}`);
+    if (!response.ok) throw new Error('Failed to fetch trends');
+    return response.json();
+  },
+};
+
 // Users API
 export const usersApi = {
   updateMe: async (data: Partial<{

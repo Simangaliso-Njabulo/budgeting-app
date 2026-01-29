@@ -7,6 +7,7 @@ to authorized users.
 """
 
 import uuid
+from datetime import date
 from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
@@ -14,6 +15,7 @@ from sqlalchemy import select, func
 from ..models.user import User
 from ..models.category import Category
 from ..models.bucket import Bucket
+from ..models.monthly_income import MonthlyIncome
 
 
 # Email address that gets pre-populated seed data
@@ -147,6 +149,18 @@ async def seed_user_data(db: AsyncSession, user: User) -> dict:
     user.currency = "ZAR"
     user.monthly_income = Decimal("20000.00")
     user.savings_target = Decimal("5000.00")
+
+    # Create a MonthlyIncome record for the current month
+    today = date.today()
+    monthly_income = MonthlyIncome(
+        user_id=user.id,
+        year=today.year,
+        month=today.month,
+        amount=Decimal("20000.00"),
+        savings_target=Decimal("5000.00"),
+    )
+    db.add(monthly_income)
+
     await db.commit()
 
     return {

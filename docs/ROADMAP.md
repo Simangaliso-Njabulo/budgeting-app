@@ -14,9 +14,12 @@ This document tracks planned improvements, features, and technical decisions for
 - **Charts:** Recharts 3.1.2
 - **Icons:** Lucide React
 
-### Backend (Planned)
-- **Language:** Python
-- **Framework:** TBD (see options below)
+### Backend (Implemented)
+- **Language:** Python 3.11+
+- **Framework:** FastAPI (async)
+- **ORM:** SQLAlchemy 2.0 (async)
+- **Database:** SQLite (dev) / PostgreSQL (production)
+- **Auth:** JWT (access + refresh tokens), bcrypt password hashing
 
 ### Database Options
 
@@ -62,6 +65,8 @@ FastAPI + PostgreSQL + SQLAlchemy (async)
 ## Current State
 
 ### Completed Features
+
+#### Frontend
 - [x] Dashboard with stat cards, charts, recent transactions
 - [x] Bucket management (CRUD)
 - [x] Transaction management (CRUD)
@@ -78,6 +83,21 @@ FastAPI + PostgreSQL + SQLAlchemy (async)
 - [x] Spending trend chart (7-day)
 - [x] Income distribution pie chart
 - [x] Password strength indicator
+- [x] Month selector with prev/next navigation
+- [x] Monthly income edit modal (from month selector)
+- [x] Monthly trend chart (income vs expenses over 6 months)
+- [x] Period-filtered dashboard (transactions scoped to selected month)
+
+#### Backend
+- [x] FastAPI project with async SQLAlchemy
+- [x] User registration and login with JWT authentication
+- [x] Categories, Buckets, Transactions CRUD with user isolation
+- [x] Monthly income tracking per user per month (get-or-create pattern)
+- [x] Monthly trends endpoint (income vs expenses over N months)
+- [x] Seed data service for new user onboarding
+- [x] Soft delete for categories
+- [x] Transaction summary endpoint with date range filtering
+- [x] SQLite database with auto-table creation
 
 ### Known Issues Fixed
 - [x] Cursor issues on auth pages
@@ -112,37 +132,43 @@ FastAPI + PostgreSQL + SQLAlchemy (async)
 | PDF export | Low | Pending | TODO in Settings.tsx |
 | Clear all data | Low | Pending | TODO in Settings.tsx |
 
-### Phase 3: Backend Development (Python)
+### Phase 3: Backend Development (Python) -- COMPLETED
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| Setup FastAPI project | High | Pending | Project structure, config |
-| Database schema design | High | Pending | Users, buckets, transactions, categories |
-| User authentication API | High | Pending | JWT tokens, password hashing |
-| CRUD API endpoints | High | Pending | All entities |
-| API documentation | Medium | Pending | OpenAPI/Swagger (auto with FastAPI) |
-| Database migrations | Medium | Pending | Alembic setup |
-| Input validation | Medium | Pending | Pydantic models |
+| Setup FastAPI project | High | Done | Project structure, config |
+| Database schema design | High | Done | Users, buckets, transactions, categories, monthly_incomes |
+| User authentication API | High | Done | JWT tokens (access + refresh), bcrypt hashing |
+| CRUD API endpoints | High | Done | All entities including monthly income |
+| API documentation | Medium | Done | Auto-generated Swagger at /docs |
+| Input validation | Medium | Done | Pydantic v2 models |
+| Monthly income tracking | High | Done | Per-month income records with get-or-create |
+| Trend analytics endpoint | Medium | Done | Income vs expenses over N months |
+| Database migrations | Medium | Pending | Alembic setup (currently using auto-create) |
 | Rate limiting | Low | Pending | API protection |
 | Logging | Low | Pending | Request/error logging |
 
-### Phase 4: Frontend-Backend Integration
+### Phase 4: Frontend-Backend Integration -- COMPLETED
 | Task | Priority | Status | Notes |
 |------|----------|--------|-------|
-| API service layer | High | Pending | Axios/fetch wrapper |
-| Authentication flow | High | Pending | Login, register, logout, refresh |
-| Protected routes | High | Pending | Auth guards |
-| Data sync | High | Pending | Replace mock data with API calls |
-| Error handling | Medium | Pending | API error messages |
+| API service layer | High | Done | fetch wrapper with auth headers |
+| Authentication flow | High | Done | Login, register, logout, token refresh |
+| Protected routes | High | Done | JWT-based auth guards |
+| Data sync | High | Done | All data fetched from API |
+| Error handling | Medium | Done | Toast notifications for API errors |
 | Offline support | Low | Pending | Cache + sync when online |
 
 ### Phase 5: New Features
 | Feature | Priority | Status | Notes |
 |---------|----------|--------|-------|
-| Recurring transactions | High | Pending | Monthly bills, subscriptions |
+| Monthly income tracking | High | Done | Per-month income with get-or-create |
+| Monthly trends chart | High | Done | Income vs expenses bar chart over 6 months |
+| Month selector | High | Done | Navigate months on dashboard |
+| Inline income edit | High | Done | Edit income from month selector modal |
+| Recurring transactions | High | Pending | Monthly bills, subscriptions (model fields exist) |
 | Budget alerts/notifications | High | Pending | When approaching limits |
 | Savings goals | Medium | Pending | Target amount, progress tracking |
-| Date range reports | Medium | Pending | Monthly/weekly summaries |
-| Transaction search | Medium | Pending | Full-text search |
+| Date range reports | Medium | Done | Transaction summary with date filters |
+| Transaction search | Medium | Done | Full-text search on description |
 | Bill reminders | Medium | Pending | Due date notifications |
 | Subscription tracker | Low | Pending | Track recurring subscriptions |
 | Bank sync (Plaid/Yodlee) | Low | Pending | Auto-import transactions |
@@ -213,6 +239,19 @@ CREATE TABLE transactions (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Monthly Income table (tracks income per month per user)
+CREATE TABLE monthly_incomes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL CHECK (month BETWEEN 1 AND 12),
+    amount DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    savings_target DECIMAL(12, 2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, year, month)
+);
+
 -- Savings Goals table (future)
 CREATE TABLE savings_goals (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -232,6 +271,7 @@ CREATE INDEX idx_transactions_user_date ON transactions(user_id, date DESC);
 CREATE INDEX idx_transactions_category ON transactions(category_id);
 CREATE INDEX idx_buckets_user ON buckets(user_id);
 CREATE INDEX idx_categories_user ON categories(user_id);
+CREATE INDEX idx_monthly_incomes_user ON monthly_incomes(user_id);
 ```
 
 ---
@@ -285,7 +325,15 @@ DELETE /api/transactions/:id  - Delete transaction
 GET    /api/transactions/summary - Get income/expense summary
 ```
 
-### Reports
+### Monthly Income
+```
+GET    /api/monthly-income              - List all monthly income records (?year=)
+GET    /api/monthly-income/trends       - Income vs expenses for last N months (?months=6)
+GET    /api/monthly-income/{year}/{month} - Get or auto-create income for a month
+PUT    /api/monthly-income/{year}/{month} - Update income for a month
+```
+
+### Reports (Planned)
 ```
 GET    /api/reports/spending-trend   - Daily spending for date range
 GET    /api/reports/category-breakdown - Spending by category
@@ -305,27 +353,31 @@ backend/
 │   ├── database.py          # Database connection
 │   ├── models/              # SQLAlchemy models
 │   │   ├── __init__.py
+│   │   ├── base.py
 │   │   ├── user.py
 │   │   ├── category.py
 │   │   ├── bucket.py
-│   │   └── transaction.py
+│   │   ├── transaction.py
+│   │   └── monthly_income.py
 │   ├── schemas/             # Pydantic schemas
 │   │   ├── __init__.py
+│   │   ├── auth.py
 │   │   ├── user.py
 │   │   ├── category.py
 │   │   ├── bucket.py
-│   │   └── transaction.py
+│   │   ├── transaction.py
+│   │   └── monthly_income.py
 │   ├── routers/             # API routes
 │   │   ├── __init__.py
 │   │   ├── auth.py
 │   │   ├── users.py
 │   │   ├── categories.py
 │   │   ├── buckets.py
-│   │   └── transactions.py
+│   │   ├── transactions.py
+│   │   └── monthly_income.py
 │   ├── services/            # Business logic
 │   │   ├── __init__.py
-│   │   ├── auth.py
-│   │   └── reports.py
+│   │   └── seed_data.py
 │   └── utils/               # Utilities
 │       ├── __init__.py
 │       ├── security.py      # Password hashing, JWT
@@ -434,19 +486,21 @@ uvicorn app.main:app --reload --port 8000
 
 ## Progress Tracking
 
-### Sprint 1 (Current)
-- [ ] Finalize database choice
-- [ ] Setup backend project structure
-- [ ] Implement user authentication
-- [ ] Create basic CRUD endpoints
+### Sprint 1 -- COMPLETED
+- [x] Finalize database choice (SQLite dev / PostgreSQL prod)
+- [x] Setup backend project structure (FastAPI + SQLAlchemy async)
+- [x] Implement user authentication (JWT access + refresh tokens)
+- [x] Create basic CRUD endpoints (users, categories, buckets, transactions)
 
-### Sprint 2
-- [ ] Frontend API integration
-- [ ] Protected routes
-- [ ] Data sync
+### Sprint 2 -- COMPLETED
+- [x] Frontend API integration (fetch wrapper with auth)
+- [x] Protected routes (JWT-based)
+- [x] Data sync (all CRUD operations via API)
 
-### Sprint 3
-- [ ] Recurring transactions
+### Sprint 3 -- IN PROGRESS
+- [x] Monthly income tracking and trends
+- [x] Month selector and inline income editing
+- [ ] Recurring transactions (model fields exist, auto-generation pending)
 - [ ] Budget alerts
 - [ ] Reports
 
@@ -454,12 +508,12 @@ uvicorn app.main:app --reload --port 8000
 
 ## Notes
 
-- Keep frontend working with mock data until backend is ready
-- Use feature flags to toggle between mock and API data
-- Implement proper error handling on both ends
-- Add comprehensive logging for debugging
-- Write tests as we go
+- Backend is live and fully integrated with the frontend
+- All data is persisted via API (no more mock data)
+- Monthly income is tracked per month per user with auto-creation from defaults
+- User data isolation is enforced via user_id on all models + JWT auth
+- Tables auto-create on startup via `create_tables()` (no Alembic migrations yet)
 
 ---
 
-*Last Updated: January 17, 2026*
+*Last Updated: January 28, 2026*

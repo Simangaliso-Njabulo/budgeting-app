@@ -24,7 +24,10 @@ export { CategoryForm, CategoryGrid, ICONS } from './categories';
 export { TransactionForm as TransactionFormModal, TransactionList, TransactionFilters, TransactionSummary } from './transactions';
 
 // Dashboard components
-export { RecentTransactions, SpendingTrend } from './dashboard';
+export { RecentTransactions, SpendingTrend, MonthlyTrendChart } from './dashboard';
+
+// Month selector
+export { default as MonthSelector } from './MonthSelector';
 
 // Auth components
 export { Login, SignUp, ForgotPassword } from './auth';

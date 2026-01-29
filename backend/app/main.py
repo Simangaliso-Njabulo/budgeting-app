@@ -10,6 +10,7 @@ from .routers import (
     categories_router,
     buckets_router,
     transactions_router,
+    monthly_income_router,
 )
 
 settings = get_settings()
@@ -50,6 +51,7 @@ app.include_router(users_router, prefix="/api/users", tags=["Users"])
 app.include_router(categories_router, prefix="/api/categories", tags=["Categories"])
 app.include_router(buckets_router, prefix="/api/buckets", tags=["Buckets"])
 app.include_router(transactions_router, prefix="/api/transactions", tags=["Transactions"])
+app.include_router(monthly_income_router, prefix="/api/monthly-income", tags=["Monthly Income"])
 
 
 @app.get("/", tags=["Root"])

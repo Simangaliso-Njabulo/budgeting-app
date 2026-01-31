@@ -5,15 +5,18 @@ import type { Transaction } from '../../types';
 
 interface TransactionSummaryProps {
   transactions: Transaction[];
+  monthlyIncome?: number;
   period?: string;
 }
 
-const TransactionSummary = ({ transactions, period = 'This Month' }: TransactionSummaryProps) => {
+const TransactionSummary = ({ transactions, monthlyIncome, period = 'This Month' }: TransactionSummaryProps) => {
   const { formatCurrency } = useTheme();
 
-  const totalIncome = transactions
+  const transactionIncome = transactions
     .filter(t => t.type === 'income')
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const totalIncome = (monthlyIncome ?? 0) + transactionIncome;
 
   const totalExpenses = transactions
     .filter(t => t.type === 'expense')

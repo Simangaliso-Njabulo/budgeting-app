@@ -89,7 +89,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const formatCurrency = (amount: number): string => {
-    return `${currency.symbol}${amount.toLocaleString()}`;
+    return `${currency.symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (

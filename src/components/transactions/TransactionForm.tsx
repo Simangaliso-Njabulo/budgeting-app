@@ -1,5 +1,5 @@
 // src/components/transactions/TransactionForm.tsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Calendar } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import type { Transaction, Bucket, NewTransactionForm } from '../../types';
@@ -8,11 +8,13 @@ interface TransactionFormProps {
   transaction?: Transaction;
   buckets: Bucket[];
   onSave: (data: NewTransactionForm) => void;
+  onSaveAndAddAnother?: (data: NewTransactionForm) => Promise<boolean> | void;
   onCancel: () => void;
 }
 
-const TransactionForm = ({ transaction, buckets, onSave, onCancel }: TransactionFormProps) => {
+const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, onCancel }: TransactionFormProps) => {
   const { formatCurrency, currency } = useTheme();
+  const formRef = useRef<HTMLFormElement>(null);
   const [form, setForm] = useState<NewTransactionForm>({
     description: '',
     amount: 0,
@@ -23,6 +25,11 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
     notes: '',
   });
   const [amountDisplay, setAmountDisplay] = useState('');
+  const [errors, setErrors] = useState<{
+    description?: string;
+    amount?: string;
+    bucketId?: string;
+  }>({});
 
   useEffect(() => {
     if (transaction) {
@@ -39,12 +46,56 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
     }
   }, [transaction]);
 
+  const validateForm = (): boolean => {
+    const newErrors: typeof errors = {};
+
+    if (!form.description.trim()) {
+      newErrors.description = 'Please enter a description';
+    }
+
+    if (form.amount <= 0) {
+      newErrors.amount = 'Please enter an amount greater than 0';
+    }
+
+    if (!form.bucketId) {
+      newErrors.bucketId = 'Please select a bucket';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const getSubmitData = (): NewTransactionForm | null => {
+    if (!validateForm()) return null;
+    const categoryId = form.bucketId ? buckets.find(b => b.id === form.bucketId)?.categoryId : '';
+    return { ...form, categoryId: categoryId || '' };
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Category comes from the selected bucket
-    const categoryId = form.bucketId ? buckets.find(b => b.id === form.bucketId)?.categoryId : '';
-    if (form.description.trim() && form.amount > 0 && form.bucketId) {
-      onSave({ ...form, categoryId: categoryId || '' });
+    const data = getSubmitData();
+    if (data) {
+      onSave(data);
+      setErrors({});
+    }
+  };
+
+  const handleSaveAndAnother = async () => {
+    const data = getSubmitData();
+    if (data && onSaveAndAddAnother) {
+      await onSaveAndAddAnother(data);
+      // Reset form but keep date and type
+      setForm({
+        description: '',
+        amount: 0,
+        type: form.type,
+        categoryId: '',
+        bucketId: undefined,
+        date: form.date,
+        notes: '',
+      });
+      setAmountDisplay('');
+      setErrors({});
     }
   };
 
@@ -60,12 +111,18 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
     } else {
       setForm({ ...form, bucketId: undefined });
     }
+    if (errors.bucketId) {
+      setErrors({ ...errors, bucketId: undefined });
+    }
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/[^0-9.]/g, '');
     setAmountDisplay(value);
     setForm({ ...form, amount: parseFloat(value) || 0 });
+    if (errors.amount) {
+      setErrors({ ...errors, amount: undefined });
+    }
   };
 
   const handleAmountBlur = () => {
@@ -83,7 +140,7 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
   const availableBuckets = buckets;
 
   return (
-    <form className="transaction-form" onSubmit={handleSubmit}>
+    <form ref={formRef} className="transaction-form" onSubmit={handleSubmit}>
       {/* Type Toggle */}
       <div className="transaction-type-toggle">
         <button
@@ -108,7 +165,7 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
           <span className="transaction-currency-symbol">{currency.symbol}</span>
           <input
             type="text"
-            className="transaction-amount-input"
+            className={`transaction-amount-input ${errors.amount ? 'error' : ''}`}
             value={amountDisplay}
             onChange={handleAmountChange}
             onBlur={handleAmountBlur}
@@ -117,6 +174,7 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
             autoFocus
           />
         </div>
+        {errors.amount && <span className="form-error">{errors.amount}</span>}
       </div>
 
       {/* Description */}
@@ -124,11 +182,17 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
         <label className="form-label">Description</label>
         <input
           type="text"
-          className="form-input"
+          className={`form-input ${errors.description ? 'error' : ''}`}
           value={form.description}
-          onChange={(e) => setForm({ ...form, description: e.target.value })}
+          onChange={(e) => {
+            setForm({ ...form, description: e.target.value });
+            if (errors.description) {
+              setErrors({ ...errors, description: undefined });
+            }
+          }}
           placeholder="e.g., Coffee at Starbucks"
         />
+        {errors.description && <span className="form-error">{errors.description}</span>}
       </div>
 
       {/* Bucket Selection - For both expense and income */}
@@ -137,10 +201,9 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
           {form.type === 'expense' ? 'Take from bucket' : 'Add to bucket'}
         </label>
         <select
-          className="form-select"
+          className={`form-select ${errors.bucketId ? 'error' : ''}`}
           value={form.bucketId || ''}
           onChange={(e) => handleBucketChange(e.target.value)}
-          required
         >
           <option value="">Select bucket...</option>
           {availableBuckets.map((bucket) => {
@@ -152,6 +215,7 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
             );
           })}
         </select>
+        {errors.bucketId && <span className="form-error">{errors.bucketId}</span>}
       </div>
 
       {/* Date */}
@@ -168,10 +232,10 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
         </div>
         <div className="date-quick-options">
           {[
-            { label: 'Today', days: 0 },
             { label: 'Yesterday', days: 1 },
             { label: '2 days ago', days: 2 },
             { label: '3 days ago', days: 3 },
+            { label: '4 days ago', days: 4 },
           ].map(({ label, days }) => {
             const d = new Date();
             d.setDate(d.getDate() - days);
@@ -195,10 +259,18 @@ const TransactionForm = ({ transaction, buckets, onSave, onCancel }: Transaction
         <button type="button" className="btn btn-secondary" onClick={onCancel}>
           Cancel
         </button>
+        {!transaction && onSaveAndAddAnother && (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={handleSaveAndAnother}
+          >
+            Save &amp; Add Another
+          </button>
+        )}
         <button
           type="submit"
           className="btn btn-primary"
-          disabled={!form.description.trim() || form.amount <= 0 || !form.bucketId}
         >
           {transaction ? 'Update Transaction' : 'Save Transaction'}
         </button>

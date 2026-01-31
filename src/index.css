@@ -2809,6 +2809,27 @@ select option {
   box-shadow: 0 0 0 3px rgba(167, 139, 250, 0.1);
 }
 
+.form-input.error,
+.form-select.error,
+.transaction-amount-input.error {
+  border-color: #ef4444;
+}
+
+.form-input.error:focus,
+.form-select.error:focus,
+.transaction-amount-input.error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+.form-error {
+  display: block;
+  color: #ef4444;
+  font-size: 13px;
+  margin-top: 6px;
+  font-weight: 500;
+}
+
 .form-actions {
   display: flex;
   gap: 12px;
@@ -3287,6 +3308,13 @@ select option {
   gap: 16px;
 }
 
+.transaction-item-amounts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
 .transaction-item-amount {
   display: flex;
   align-items: center;
@@ -3301,6 +3329,16 @@ select option {
 
 .transaction-item-amount.income {
   color: var(--accent-green);
+}
+
+.transaction-item-balance {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.transaction-item-balance.negative {
+  color: var(--accent-red);
 }
 
 .transaction-item-actions {

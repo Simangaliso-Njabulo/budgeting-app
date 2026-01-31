@@ -683,7 +683,7 @@ const BudgetingApp = () => {
   };
 
   // Transaction CRUD
-  const handleSaveTransaction = async (data: NewTransactionForm) => {
+  const saveTransaction = async (data: NewTransactionForm): Promise<boolean> => {
     try {
       const apiData = {
         description: data.description,
@@ -695,35 +695,60 @@ const BudgetingApp = () => {
         notes: data.notes,
       };
 
-      let updatedTransactions: Transaction[];
-
       if (editingTransaction) {
         const updated = await transactionsApi.update(
           editingTransaction.id,
           apiData,
         );
         const transformedTx = transformTransaction(updated);
-        updatedTransactions = transactions.map((t) =>
-          t.id === editingTransaction.id ? transformedTx : t,
-        );
-        setTransactions(updatedTransactions);
+        setTransactions((prevTxs) => {
+          const newTxs = prevTxs.map((t) =>
+            t.id === editingTransaction.id ? transformedTx : t,
+          );
+          // React 18 automatically batches this setState call
+          queueMicrotask(() => {
+            setBuckets((prevBuckets) =>
+              recalculateBucketSpending(newTxs, prevBuckets),
+            );
+          });
+          return newTxs;
+        });
         showToast("Transaction updated successfully!");
       } else {
         const created = await transactionsApi.create(apiData);
         const newTransaction = transformTransaction(created);
-        updatedTransactions = [...transactions, newTransaction];
-        setTransactions(updatedTransactions);
+        setTransactions((prevTxs) => {
+          const newTxs = [...prevTxs, newTransaction];
+          // React 18 automatically batches this setState call
+          queueMicrotask(() => {
+            setBuckets((prevBuckets) =>
+              recalculateBucketSpending(newTxs, prevBuckets),
+            );
+          });
+          return newTxs;
+        });
         showToast("Transaction added successfully!");
       }
 
-      // Recalculate all bucket spending from transactions
-      setBuckets(recalculateBucketSpending(updatedTransactions, buckets));
-
-      setIsTransactionModalOpen(false);
-      setEditingTransaction(undefined);
+      // Refresh trend data to keep charts in sync
+      fetchTrends();
+      return true;
     } catch {
       showToast("Failed to save transaction", "error");
+      return false;
     }
+  };
+
+  const handleSaveTransaction = async (data: NewTransactionForm) => {
+    const success = await saveTransaction(data);
+    if (success) {
+      setIsTransactionModalOpen(false);
+      setEditingTransaction(undefined);
+    }
+  };
+
+  const handleSaveAndAddAnother = async (data: NewTransactionForm) => {
+    await saveTransaction(data);
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
@@ -740,13 +765,18 @@ const BudgetingApp = () => {
       const transaction = deleteConfirm.item as Transaction;
       try {
         await transactionsApi.delete(transaction.id);
-        const updatedTransactions = transactions.filter(
-          (t) => t.id !== transaction.id,
-        );
-        setTransactions(updatedTransactions);
+        let updatedTransactions: Transaction[] = [];
+        setTransactions((prev) => {
+          updatedTransactions = prev.filter(
+            (t) => t.id !== transaction.id,
+          );
+          return updatedTransactions;
+        });
 
         // Recalculate all bucket spending
-        setBuckets(recalculateBucketSpending(updatedTransactions, buckets));
+        setBuckets((prevBuckets) =>
+          recalculateBucketSpending(updatedTransactions, prevBuckets),
+        );
 
         showToast("Transaction deleted", "info");
       } catch {
@@ -1296,7 +1326,7 @@ const BudgetingApp = () => {
               />
 
               {/* Transaction Summary */}
-              <TransactionSummary transactions={filteredTransactions} />
+              <TransactionSummary transactions={filteredTransactions} monthlyIncome={income.amount} />
 
               {/* Transaction List */}
               {filteredTransactions.length > 0 ? (
@@ -1304,6 +1334,8 @@ const BudgetingApp = () => {
                   transactions={filteredTransactions}
                   categories={categories}
                   buckets={buckets}
+                  monthlyIncome={income.amount}
+                  selectedPeriod={selectedPeriod}
                   onEdit={handleEditTransaction}
                   onDelete={handleDeleteTransaction}
                 />
@@ -1423,6 +1455,7 @@ const BudgetingApp = () => {
           transaction={editingTransaction}
           buckets={buckets}
           onSave={handleSaveTransaction}
+          onSaveAndAddAnother={handleSaveAndAddAnother}
           onCancel={() => {
             setIsTransactionModalOpen(false);
             setEditingTransaction(undefined);

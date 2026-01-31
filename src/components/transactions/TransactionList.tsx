@@ -8,6 +8,8 @@ interface TransactionListProps {
   transactions: Transaction[];
   categories: Category[];
   buckets: Bucket[];
+  monthlyIncome?: number;
+  selectedPeriod?: { year: number; month: number };
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
 }
@@ -33,6 +35,7 @@ interface SwipeableItemProps {
   category: Category | undefined;
   bucket: Bucket | undefined;
   isExpense: boolean;
+  balance?: number;
   formatCurrency: (amount: number) => string;
   onEdit: (transaction: Transaction) => void;
   onDelete: (transaction: Transaction) => void;
@@ -44,6 +47,7 @@ const SwipeableTransactionItem = ({
   category,
   bucket,
   isExpense,
+  balance,
   formatCurrency,
   onEdit,
   onDelete,
@@ -271,9 +275,16 @@ const SwipeableTransactionItem = ({
         </div>
 
         <div className="transaction-item-right">
-          <div className={`transaction-item-amount ${isExpense ? 'expense' : 'income'}`}>
-            {isExpense ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
-            <span>{isExpense ? '-' : '+'}{formatCurrency(transaction.amount)}</span>
+          <div className="transaction-item-amounts">
+            <div className={`transaction-item-amount ${isExpense ? 'expense' : 'income'}`}>
+              {isExpense ? <ArrowDownRight className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+              <span>{isExpense ? '-' : '+'}{formatCurrency(transaction.amount)}</span>
+            </div>
+            {balance !== undefined && (
+              <span className={`transaction-item-balance ${balance < 0 ? 'negative' : ''}`}>
+                Bal: {formatCurrency(balance)}
+              </span>
+            )}
           </div>
           {/* Desktop-only action buttons */}
           <div className="transaction-item-actions transaction-item-actions-desktop">
@@ -298,8 +309,29 @@ const SwipeableTransactionItem = ({
   );
 };
 
-const TransactionList = ({ transactions, categories, buckets, onEdit, onDelete }: TransactionListProps) => {
+const TransactionList = ({ transactions, categories, buckets, monthlyIncome, selectedPeriod, onEdit, onDelete }: TransactionListProps) => {
   const { formatCurrency } = useTheme();
+
+  // Compute running balance only for the selected period's transactions
+  const balanceMap = new Map<string, number>();
+  if (monthlyIncome !== undefined && selectedPeriod) {
+    const periodTxs = transactions.filter((tx) => {
+      const d = new Date(tx.date);
+      return d.getFullYear() === selectedPeriod.year && d.getMonth() + 1 === selectedPeriod.month;
+    });
+    const chronological = [...periodTxs].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.createdAt.getTime() - b.createdAt.getTime()
+    );
+    let balance = monthlyIncome;
+    for (const tx of chronological) {
+      if (tx.type === 'expense') {
+        balance -= tx.amount;
+      } else {
+        balance += tx.amount;
+      }
+      balanceMap.set(tx.id, Math.round(balance * 100) / 100);
+    }
+  }
 
   // Group transactions by date
   const groupedTransactions = transactions.reduce((groups, transaction) => {
@@ -317,10 +349,17 @@ const TransactionList = ({ transactions, categories, buckets, onEdit, onDelete }
     return groups;
   }, {} as Record<string, Transaction[]>);
 
-  // Sort dates in descending order
+  // Sort dates in descending order (newest first) so most recent days appear at the top
   const sortedDates = Object.keys(groupedTransactions).sort((a, b) =>
     new Date(b).getTime() - new Date(a).getTime()
   );
+
+  // Sort transactions within each group by creation time (newest first to match date group order)
+  for (const date of sortedDates) {
+    groupedTransactions[date].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.createdAt.getTime() - a.createdAt.getTime()
+    );
+  }
 
   // Get today's and yesterday's date strings for comparison
   const today = new Date();
@@ -368,6 +407,7 @@ const TransactionList = ({ transactions, categories, buckets, onEdit, onDelete }
                     category={category}
                     bucket={bucket}
                     isExpense={isExpense}
+                    balance={balanceMap.get(transaction.id)}
                     formatCurrency={formatCurrency}
                     onEdit={onEdit}
                     onDelete={onDelete}

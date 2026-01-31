@@ -54,7 +54,7 @@ const useCountAnimation = (end: number, duration: number = 1500, delay: number =
 
         // Easing function for smooth deceleration - same for both number and ring
         const easeOutQuart = 1 - Math.pow(1 - currentProgress, 4);
-        const currentCount = Math.floor(startValue + (end - startValue) * easeOutQuart);
+        const currentCount = Math.round((startValue + (end - startValue) * easeOutQuart) * 100) / 100;
 
         setCount(currentCount);
         setProgress(easeOutQuart); // Update progress for ring animation

@@ -54,11 +54,12 @@ export function formatDate(
     return formatRelativeDate(d);
   }
 
-  const options: Intl.DateTimeFormatOptions = {
+  const formatOptions: Record<string, Intl.DateTimeFormatOptions> = {
     short: { month: 'numeric', day: 'numeric' },
     medium: { month: 'short', day: 'numeric', year: 'numeric' },
     long: { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' },
-  }[format];
+  };
+  const options = formatOptions[format];
 
   return new Intl.DateTimeFormat('en-US', options).format(d);
 }

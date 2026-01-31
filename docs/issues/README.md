@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 14
-- **Fixed:** 14
+- **Total Issues:** 15
+- **Fixed:** 15
 - **Open:** 0
 
 ## How to Use This Index
@@ -37,6 +37,7 @@
 | 012 | Balance inconsistent across date groups after date sort fix | ✅ Fixed | [012-balance-inconsistent.md](012-balance-inconsistent.md) |
 | 013 | Form validation UX - buttons grayed out instead of showing helpful errors | ✅ Fixed | [013-form-validation-ux.md](013-form-validation-ux.md) |
 | 014 | Dashboard recent transactions not updating after save (requires browser refresh) | ✅ Fixed | [014-dashboard-refresh.md](014-dashboard-refresh.md) |
+| 015 | Properly set up Tailwind CSS to reduce CSS file size and improve maintainability | ✅ Fixed | [015-tailwind-setup.md](015-tailwind-setup.md) |
 
 ---
 

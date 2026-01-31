@@ -757,8 +757,9 @@ const BudgetingApp = () => {
     }
   };
 
-  const handleSaveAndAddAnother = async (data: NewTransactionForm) => {
+  const handleSaveAndAddAnother = async (data: NewTransactionForm): Promise<boolean> => {
     await saveTransaction(data);
+    return true;
   };
 
   const handleEditTransaction = (transaction: Transaction) => {
@@ -1435,11 +1436,8 @@ const BudgetingApp = () => {
           {/* Settings Tab */}
           {activeTab === "settings" && (
             <Settings
-              income={income}
-              onUpdateIncome={handleUpdateIncome}
               user={user ? { name: user.name, email: user.email } : undefined}
               onLogout={handleLogout}
-              selectedPeriod={selectedPeriod}
             />
           )}
         </div>

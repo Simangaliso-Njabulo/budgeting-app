@@ -10,9 +10,10 @@ interface TransactionFormProps {
   onSave: (data: NewTransactionForm) => void;
   onSaveAndAddAnother?: (data: NewTransactionForm) => Promise<boolean> | void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
-const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, onCancel }: TransactionFormProps) => {
+const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, onCancel, onDelete }: TransactionFormProps) => {
   const { formatCurrency, currency } = useTheme();
   const formRef = useRef<HTMLFormElement>(null);
   const [form, setForm] = useState<NewTransactionForm>({
@@ -275,6 +276,19 @@ const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, on
           {transaction ? 'Update Transaction' : 'Save Transaction'}
         </button>
       </div>
+
+      {/* Delete button (shown only when editing) */}
+      {transaction && onDelete && (
+        <div className="form-delete-section">
+          <button
+            type="button"
+            className="btn btn-danger btn-delete-transaction"
+            onClick={onDelete}
+          >
+            Delete Transaction
+          </button>
+        </div>
+      )}
     </form>
   );
 };

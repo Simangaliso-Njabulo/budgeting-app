@@ -2837,6 +2837,19 @@ select option {
   margin-top: 8px;
 }
 
+.form-delete-section {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.btn-delete-transaction {
+  width: 100%;
+  max-width: 300px;
+}
+
 /* Category Grid */
 .category-grid {
   display: grid;
@@ -3777,7 +3790,7 @@ select option {
   border-radius: 10px;
   transition: background 0.15s ease, box-shadow 0.2s ease;
   animation: slideInFromBottom 0.6s ease both;
-  cursor: default;
+  cursor: pointer;
   user-select: none;
 }
 

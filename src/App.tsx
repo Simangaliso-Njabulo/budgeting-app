@@ -1061,6 +1061,7 @@ const BudgetingApp = () => {
                   transactions={periodTransactions}
                   categories={categories}
                   onViewAll={() => setActiveTab("transactions")}
+                  onEdit={handleEditTransaction}
                   limit={recentTxLimit}
                   monthlyIncome={income.amount}
                 />
@@ -1494,6 +1495,14 @@ const BudgetingApp = () => {
             setIsTransactionModalOpen(false);
             setEditingTransaction(undefined);
           }}
+          onDelete={
+            editingTransaction
+              ? () => {
+                  setIsTransactionModalOpen(false);
+                  handleDeleteTransaction(editingTransaction);
+                }
+              : undefined
+          }
         />
       </Modal>
 

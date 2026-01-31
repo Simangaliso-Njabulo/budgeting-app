@@ -7,6 +7,7 @@ interface RecentTransactionsProps {
   transactions: Transaction[];
   categories: Category[];
   onViewAll: () => void;
+  onEdit: (transaction: Transaction) => void;
   limit?: number;
   monthlyIncome?: number;
 }
@@ -26,7 +27,7 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   income: DollarSign,
 };
 
-const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5, monthlyIncome }: RecentTransactionsProps) => {
+const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit = 5, monthlyIncome }: RecentTransactionsProps) => {
   const { formatCurrency } = useTheme();
 
   // Sort by date - show all transactions, scroll to see more
@@ -90,6 +91,7 @@ const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5, mo
                 key={transaction.id}
                 className="recent-transaction-item"
                 style={{ animationDelay: `${index * 60}ms` }}
+                onClick={() => onEdit(transaction)}
               >
                 <div className="recent-transaction-left">
                   <div

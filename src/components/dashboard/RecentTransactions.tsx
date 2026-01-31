@@ -8,6 +8,7 @@ interface RecentTransactionsProps {
   categories: Category[];
   onViewAll: () => void;
   limit?: number;
+  monthlyIncome?: number;
 }
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -25,13 +26,30 @@ const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   income: DollarSign,
 };
 
-const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5 }: RecentTransactionsProps) => {
+const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5, monthlyIncome }: RecentTransactionsProps) => {
   const { formatCurrency } = useTheme();
 
-  // Sort by date and take the most recent
+  // Sort by date - show all transactions, scroll to see more
   const recentTransactions = [...transactions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, limit);
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  // Calculate running balance for displayed transactions
+  const balanceMap = new Map<string, number>();
+  if (monthlyIncome !== undefined) {
+    // Sort transactions chronologically to calculate balance
+    const chronological = [...transactions].sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime() || a.createdAt.getTime() - b.createdAt.getTime()
+    );
+    let balance = monthlyIncome;
+    for (const tx of chronological) {
+      if (tx.type === 'expense') {
+        balance -= tx.amount;
+      } else {
+        balance += tx.amount;
+      }
+      balanceMap.set(tx.id, Math.round(balance * 100) / 100);
+    }
+  }
 
   const formatDate = (date: Date) => {
     const d = new Date(date);
@@ -58,7 +76,10 @@ const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5 }: 
           <p>No transactions yet</p>
         </div>
       ) : (
-        <div className="recent-transactions-list">
+        <div
+          className="recent-transactions-list"
+          style={{ '--visible-items': limit } as React.CSSProperties}
+        >
           {recentTransactions.map((transaction, index) => {
             const category = categories.find(c => c.id === transaction.categoryId);
             const Icon = ICON_MAP[category?.icon || 'home'] || Home;
@@ -86,10 +107,17 @@ const RecentTransactions = ({ transactions, categories, onViewAll, limit = 5 }: 
                   </div>
                 </div>
                 <div className="recent-transaction-right">
-                  <span className={`recent-transaction-amount ${isExpense ? 'expense' : 'income'}`}>
-                    {isExpense ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
-                    {isExpense ? '-' : '+'}{formatCurrency(transaction.amount)}
-                  </span>
+                  <div className="recent-transaction-amounts">
+                    <span className={`recent-transaction-amount ${isExpense ? 'expense' : 'income'}`}>
+                      {isExpense ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
+                      {isExpense ? '-' : '+'}{formatCurrency(transaction.amount)}
+                    </span>
+                    {balanceMap.has(transaction.id) && (
+                      <span className={`recent-transaction-balance ${balanceMap.get(transaction.id)! < 0 ? 'negative' : ''}`}>
+                        Bal: {formatCurrency(balanceMap.get(transaction.id)!)}
+                      </span>
+                    )}
+                  </div>
                   <span className="recent-transaction-date">{formatDate(transaction.date)}</span>
                 </div>
               </div>

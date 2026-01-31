@@ -1,9 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import {
-  Users,
-  FolderOpen,
-  Receipt,
-} from "lucide-react";
+import { Users, FolderOpen, Receipt } from "lucide-react";
 
 // Components
 import {
@@ -129,6 +125,11 @@ const BudgetingApp = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const [activeTab, setActiveTab] = useState("dashboard");
+
+  // Recent transactions limit - responsive based on screen size
+  const [recentTxLimit, setRecentTxLimit] = useState(() =>
+    window.innerWidth > 1024 ? 7 : 5,
+  );
 
   // Selected budget period (month/year)
   const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriod>(() => {
@@ -420,6 +421,16 @@ const BudgetingApp = () => {
     checkAuth();
   }, [fetchData]);
 
+  // Handle responsive recent transactions limit
+  useEffect(() => {
+    const handleResize = () => {
+      setRecentTxLimit(window.innerWidth > 1024 ? 7 : 5);
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   // Auth handlers
   const handleLogin = async (email: string, password: string) => {
     try {
@@ -680,7 +691,9 @@ const BudgetingApp = () => {
   };
 
   // Transaction CRUD
-  const saveTransaction = async (data: NewTransactionForm): Promise<boolean> => {
+  const saveTransaction = async (
+    data: NewTransactionForm,
+  ): Promise<boolean> => {
     try {
       const apiData = {
         description: data.description,
@@ -764,9 +777,7 @@ const BudgetingApp = () => {
         await transactionsApi.delete(transaction.id);
         let updatedTransactions: Transaction[] = [];
         setTransactions((prev) => {
-          updatedTransactions = prev.filter(
-            (t) => t.id !== transaction.id,
-          );
+          updatedTransactions = prev.filter((t) => t.id !== transaction.id);
           return updatedTransactions;
         });
 
@@ -997,26 +1008,34 @@ const BudgetingApp = () => {
                 {/* Over Budget Alerts */}
                 <div className="over-budget-alerts glass-card">
                   <h3 className="over-budget-title">Over Budget Alerts</h3>
-                  {buckets.filter(b => b.actual > b.allocated).length === 0 ? (
+                  {buckets.filter((b) => b.actual > b.allocated).length ===
+                  0 ? (
                     <div className="over-budget-empty">
                       <p>All buckets are within budget!</p>
                     </div>
                   ) : (
                     <div className="over-budget-list">
                       {buckets
-                        .filter(b => b.actual > b.allocated)
-                        .sort((a, b) => (b.actual - b.allocated) - (a.actual - a.allocated))
+                        .filter((b) => b.actual > b.allocated)
+                        .sort(
+                          (a, b) =>
+                            b.actual - b.allocated - (a.actual - a.allocated),
+                        )
                         .map((bucket) => {
                           const overage = bucket.actual - bucket.allocated;
-                          const percentage = bucket.allocated > 0
-                            ? ((overage / bucket.allocated) * 100).toFixed(0)
-                            : '100';
+                          const percentage =
+                            bucket.allocated > 0
+                              ? ((overage / bucket.allocated) * 100).toFixed(0)
+                              : "100";
                           return (
                             <div key={bucket.id} className="over-budget-item">
                               <div className="over-budget-item-left">
-                                <span className="over-budget-bucket-name">{bucket.name}</span>
+                                <span className="over-budget-bucket-name">
+                                  {bucket.name}
+                                </span>
                                 <span className="over-budget-amounts">
-                                  {formatCurrency(bucket.actual)} / {formatCurrency(bucket.allocated)}
+                                  {formatCurrency(bucket.actual)} /{" "}
+                                  {formatCurrency(bucket.allocated)}
                                 </span>
                               </div>
                               <div className="over-budget-item-right">
@@ -1042,7 +1061,8 @@ const BudgetingApp = () => {
                   transactions={periodTransactions}
                   categories={categories}
                   onViewAll={() => setActiveTab("transactions")}
-                  limit={5}
+                  limit={recentTxLimit}
+                  monthlyIncome={income.amount}
                 />
               </div>
 
@@ -1082,13 +1102,15 @@ const BudgetingApp = () => {
                   </div>
                   <div>
                     <span className="budget-summary-label">Unallocated</span>
-                    <div className={`budget-summary-value ${
-                      remaining > 0
-                        ? "budget-summary-value--positive"
-                        : remaining < 0
-                          ? "budget-summary-value--negative"
-                          : ""
-                    }`}>
+                    <div
+                      className={`budget-summary-value ${
+                        remaining > 0
+                          ? "budget-summary-value--positive"
+                          : remaining < 0
+                            ? "budget-summary-value--negative"
+                            : ""
+                      }`}
+                    >
                       {formatCurrency(remaining)}
                     </div>
                   </div>
@@ -1335,7 +1357,10 @@ const BudgetingApp = () => {
               />
 
               {/* Transaction Summary */}
-              <TransactionSummary transactions={filteredTransactions} monthlyIncome={income.amount} />
+              <TransactionSummary
+                transactions={filteredTransactions}
+                monthlyIncome={income.amount}
+              />
 
               {/* Transaction List */}
               {filteredTransactions.length > 0 ? (

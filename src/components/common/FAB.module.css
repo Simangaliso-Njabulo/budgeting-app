@@ -1,0 +1,52 @@
+/* FAB (Floating Action Button) Component Styles */
+
+.fab {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 20px;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+  border: none;
+  border-radius: 50px;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: default;
+  user-select: none;
+  box-shadow: 0 8px 25px rgba(167, 139, 250, 0.4);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(167, 139, 250, 0.5), 0 10px 30px rgba(167, 139, 250, 0.3);
+}
+
+.fabIcon {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.fabLabel {
+  font-size: 14px;
+  pointer-events: none;
+}
+
+/* FAB mobile positioning */
+@media (max-width: 1024px) {
+  .fab {
+    bottom: 110px;
+    right: 20px;
+    z-index: 200;
+    padding: 14px;
+  }
+
+  .fabLabel {
+    display: none;
+  }
+}

@@ -1,6 +1,7 @@
 // src/components/StatCard.tsx
 import { useEffect, useState, useRef } from "react";
 import { useTheme } from "../context/ThemeContext";
+import styles from './StatCard.module.css';
 
 interface StatCardProps {
   title: string;
@@ -115,18 +116,18 @@ const StatCard = ({
   return (
     <div
       ref={ref}
-      className="stat-card glass-card"
+      className={`${styles.statCard} glass-card`}
       style={{
         "--accent-color": color.main,
         "--accent-muted": color.muted,
         animationDelay: `${delay}ms`
       } as React.CSSProperties}
     >
-      <div className="stat-card-content">
+      <div className={styles.statCardContent}>
         {/* Left side - Ring Progress */}
         {showProgress && (
-          <div className="stat-ring-container">
-            <svg className="stat-ring" viewBox="0 0 100 100">
+          <div className={styles.statRingContainer}>
+            <svg className={styles.statRing} viewBox="0 0 100 100">
               {/* Background ring */}
               <circle
                 cx="50"
@@ -148,41 +149,41 @@ const StatCard = ({
                 strokeDasharray={circumference}
                 strokeDashoffset={strokeDashoffset}
                 transform="rotate(-90 50 50)"
-                className="stat-ring-progress"
+                className={styles.statRingProgress}
                 style={{
                   filter: `drop-shadow(0 0 4px ${color.muted})`,
                 }}
               />
             </svg>
             {/* Icon in center - no background */}
-            <div className="stat-ring-icon-wrapper" style={{ color: color.main }}>
-              <Icon className="stat-ring-icon-svg" />
+            <div className={styles.statRingIconWrapper} style={{ color: color.main }}>
+              <Icon className={styles.statRingIconSvg} />
             </div>
           </div>
         )}
 
         {/* Right side - Stats */}
-        <div className="stat-info">
-          <span className="stat-title">{title}</span>
-          <div className="stat-value-row">
-            <span className="stat-value-large" style={{ color: color.main }}>
+        <div className={styles.statInfo}>
+          <span className={styles.statTitle}>{title}</span>
+          <div className={styles.statValueRow}>
+            <span className={styles.statValueLarge} style={{ color: color.main }}>
               {formatCurrency(animatedValue)}
             </span>
             {!hideTotal && total && total !== 100 && (
-              <span className="stat-total">/{formatCurrency(total)}</span>
+              <span className={styles.statTotal}>/{formatCurrency(total)}</span>
             )}
           </div>
-          <div className="stat-percentage">{percentage.toFixed(0)}% {subtitle || "used"}</div>
-          <div className="stat-details">
-            <div className="stat-detail-row">
-              <span className="stat-detail-dot" style={{ background: color.main }} />
-              <span className="stat-detail-label">{valueLabel}</span>
-              <span className="stat-detail-value">{formatCurrency(animatedValue)}</span>
+          <div className={styles.statPercentage}>{percentage.toFixed(0)}% {subtitle || "used"}</div>
+          <div className={styles.statDetails}>
+            <div className={styles.statDetailRow}>
+              <span className={styles.statDetailDot} style={{ background: color.main }} />
+              <span className={styles.statDetailLabel}>{valueLabel}</span>
+              <span className={styles.statDetailValue}>{formatCurrency(animatedValue)}</span>
             </div>
-            <div className="stat-detail-row">
-              <span className="stat-detail-dot stat-detail-dot-available" />
-              <span className="stat-detail-label">{remainingLabel}</span>
-              <span className="stat-detail-value">{formatCurrency(total - animatedValue)}</span>
+            <div className={styles.statDetailRow}>
+              <span className={`${styles.statDetailDot} ${styles.statDetailDotAvailable}`} />
+              <span className={styles.statDetailLabel}>{remainingLabel}</span>
+              <span className={styles.statDetailValue}>{formatCurrency(total - animatedValue)}</span>
             </div>
           </div>
         </div>

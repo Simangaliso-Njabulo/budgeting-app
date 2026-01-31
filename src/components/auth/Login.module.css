@@ -1,0 +1,354 @@
+.success {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(110, 231, 183, 0.1);
+  border: 1px solid rgba(110, 231, 183, 0.2);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--accent-green);
+  cursor: default;
+  user-select: none;
+}
+
+.divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--glass-border);
+}
+
+.logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.forgot {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-purple);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.logo-title {
+  font-family: 'Great Vibes', cursive;
+  font-size: 32px;
+  font-weight: 400;
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+  cursor: default;
+  user-select: none;
+}
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background:
+    radial-gradient(ellipse at 20% 20%, rgba(167, 139, 250, 0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 80%, rgba(125, 211, 252, 0.1) 0%, transparent 50%),
+    linear-gradient(180deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+  padding: 20px;
+}
+
+.success-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  cursor: default;
+  user-select: none;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 48px 14px 46px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  font-size: 14px;
+  color: var(--text-primary);
+  transition: all 0.25s ease;
+  cursor: text;
+}
+
+.logo-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  cursor: default;
+  user-select: none;
+}
+
+.remember-label {
+  color: var(--text-secondary);
+  user-select: none;
+  cursor: pointer;
+}
+
+.back-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--accent-purple), var(--accent-blue));
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  margin-top: 8px;
+}
+
+.error-icon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  cursor: text;
+  user-select: none;
+}
+
+.social-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--glass-border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.input-toggle {
+  position: absolute;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.footer-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent-purple);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: inherit;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.container {
+  width: 100%;
+  max-width: 440px;
+  animation: authEnter 0.5s ease;
+}
+
+.footer {
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: default;
+  user-select: none;
+}
+
+.error {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(252, 165, 165, 0.1);
+  border: 1px solid rgba(252, 165, 165, 0.2);
+  border-radius: 10px;
+  font-size: 13px;
+  color: var(--accent-red);
+}
+
+.back {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-bottom: 20px;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 28px;
+  cursor: default;
+  user-select: none;
+}
+
+.social-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  cursor: default;
+  user-select: none;
+}
+
+.checkbox {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  border: 1px solid var(--glass-border);
+  background: var(--bg-elevated);
+  cursor: pointer;
+  appearance: none;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.logo-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  cursor: default;
+  user-select: none;
+}
+
+.remember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  cursor: default;
+  user-select: none;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  cursor: default;
+  user-select: none;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: default;
+  user-select: none;
+}
+
+.social-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.input-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  min-height: 18px;
+  color: var(--text-muted);
+  pointer-events: none;
+  transition: color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.divider-text {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: default;
+  user-select: none;
+}
+
+.card {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-lg);
+  padding: 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+  cursor: default;
+  user-select: none;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  cursor: default;
+  user-select: none;
+}
+

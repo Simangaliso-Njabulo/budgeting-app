@@ -1,0 +1,47 @@
+/* ConfirmDialog Component Styles */
+
+.confirmDialogContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 12px;
+}
+
+.confirmDialogIcon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.confirmDialogIconDanger {
+  background: rgba(252, 165, 165, 0.1);
+  color: var(--accent-red);
+}
+
+.confirmDialogIconWarning {
+  background: rgba(253, 186, 116, 0.1);
+  color: var(--accent-orange);
+}
+
+.confirmDialogIconInfo {
+  background: rgba(125, 211, 252, 0.1);
+  color: var(--accent-blue);
+}
+
+.confirmDialogMessage {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.confirmDialogActions {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+}

@@ -1,0 +1,59 @@
+.container {
+  padding: 0.5rem 1rem;
+  margin-bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  border-radius: 0.75rem;
+  border-bottom: none;
+  cursor: default;
+  user-select: none;
+}
+
+.-stats {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+}
+
+.-label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+}
+
+.-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.-value--allocated {
+  color: #7dd3fc;
+}
+
+.-value--positive {
+  color: #6ee7b7;
+}
+
+.-value--negative {
+  color: #fca5a5;
+}
+
+.-badge {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.-badge--positive {
+  background: rgba(110, 231, 183, 0.1);
+  color: #6ee7b7;
+}
+
+.-badge--negative {
+  background: rgba(252, 165, 165, 0.1);
+  color: #fca5a5;
+}
+

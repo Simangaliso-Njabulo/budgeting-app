@@ -1,5 +1,6 @@
 // src/components/Sidebar.tsx
 import { LayoutDashboard, Wallet, ArrowUpDown, FolderOpen, Settings, LogOut } from "lucide-react";
+import styles from './Sidebar.module.css';
 
 interface SidebarProps {
   activeTab: string;
@@ -11,7 +12,7 @@ interface SidebarProps {
 
 // Custom Logo Icon Component - Dollar Sign (always purple)
 const AppLogoIcon = () => (
-  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="logo-svg">
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" className={styles.logoSvg}>
     <defs>
       {/* Purple gradient for logo */}
       <linearGradient id="logoGradientPurple" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -65,24 +66,24 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
   ];
 
   return (
-    <aside className="sidebar glass-sidebar">
+    <aside className={styles.sidebar}>
       {/* Subtle background glow */}
-      <div className="sidebar-glow" />
+      <div className={styles.sidebarGlow} />
 
       {/* Logo Section */}
-      <div className="sidebar-header">
-        <div className="sidebar-logo">
-          <div className="logo-icon-container">
+      <div className={styles.sidebarHeader}>
+        <div className={styles.sidebarLogo}>
+          <div className={styles.logoIconContainer}>
             <AppLogoIcon />
           </div>
-          <span className="logo-title">{appName}</span>
-          <span className="logo-subtitle">{subtitle}</span>
+          <span className={styles.logoTitle}>{appName}</span>
+          <span className={styles.logoSubtitle}>{subtitle}</span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="sidebar-nav">
-        <div className="nav-section">
+      <nav className={styles.sidebarNav}>
+        <div className={styles.navSection}>
           {navItems.map((item, index) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -90,35 +91,35 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`nav-item ${isActive ? "nav-item-active" : ""}`}
+                className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <Icon className="nav-icon" />
-                <span className="nav-label">{item.label}</span>
-                {isActive && <div className="nav-indicator" />}
+                <Icon className={styles.navIcon} />
+                <span className={styles.navLabel}>{item.label}</span>
+                {isActive && <div className={styles.navIndicator} />}
               </button>
             );
           })}
         </div>
 
         {/* Bottom Section */}
-        <div className="nav-section nav-section-bottom">
+        <div className={`${styles.navSection} ${styles.navSectionBottom}`}>
           {bottomItems.map((item) => {
             const Icon = item.icon;
             return (
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`nav-item ${activeTab === item.id ? "nav-item-active" : ""}`}
+                className={`${styles.navItem} ${activeTab === item.id ? styles.navItemActive : ""}`}
               >
-                <Icon className="nav-icon" />
-                <span className="nav-label">{item.label}</span>
+                <Icon className={styles.navIcon} />
+                <span className={styles.navLabel}>{item.label}</span>
               </button>
             );
           })}
-          <button className="nav-item nav-item-logout" onClick={onLogout}>
-            <LogOut className="nav-icon" />
-            <span className="nav-label">Sign Out</span>
+          <button className={`${styles.navItem} ${styles.navItemLogout}`} onClick={onLogout}>
+            <LogOut className={styles.navIcon} />
+            <span className={styles.navLabel}>Sign Out</span>
           </button>
         </div>
       </nav>

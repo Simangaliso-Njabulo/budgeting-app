@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Edit2, Trash2, Home, ShoppingBag, Car, Utensils, Film, Briefcase, Heart, Gift, Plane, Smartphone, Zap, DollarSign } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import type { Category, Bucket } from '../../types';
+import styles from './CategoryGrid.module.css';
 
 // Hook for animated counting
 const useCountUp = (end: number, duration: number = 1000, delay: number = 300) => {
@@ -84,24 +85,24 @@ const CategoryCard = ({ category, stats, onEdit, onDelete }: CategoryCardProps) 
   const animatedProgress = useCountUp(Math.round(progressPercent), 1000, 400);
 
   return (
-    <div className="category-card glass-card">
-      <div className="category-card-header">
+    <div className={`${styles.categoryCard} glass-card`}>
+      <div className={styles.categoryCardHeader}>
         <div
-          className="category-card-icon"
+          className={styles.categoryCardIcon}
           style={{ backgroundColor: `${category.color}20`, color: category.color }}
         >
           <Icon className="h-6 w-6" />
         </div>
-        <div className="category-card-actions">
+        <div className={styles.categoryCardActions}>
           <button
-            className="category-action-btn"
+            className={styles.categoryActionBtn}
             onClick={() => onEdit(category)}
             title="Edit category"
           >
             <Edit2 className="h-4 w-4" />
           </button>
           <button
-            className="category-action-btn category-action-btn-danger"
+            className={`${styles.categoryActionBtn} ${styles.categoryActionBtnDanger}`}
             onClick={() => onDelete(category)}
             title="Delete category"
           >
@@ -110,30 +111,30 @@ const CategoryCard = ({ category, stats, onEdit, onDelete }: CategoryCardProps) 
         </div>
       </div>
 
-      <h3 className="category-card-name">{category.name}</h3>
-      <span className="category-card-type" style={{ color: category.color }}>
+      <h3 className={styles.categoryCardName}>{category.name}</h3>
+      <span className={styles.categoryCardType} style={{ color: category.color }}>
         {category.type || 'expense'}
       </span>
 
       {/* Progress Bar */}
-      <div className="category-card-progress">
-        <div className="category-progress-bar">
+      <div className={styles.categoryCardProgress}>
+        <div className={styles.categoryProgressBar}>
           <div
-            className="category-progress-fill"
+            className={styles.categoryProgressFill}
             style={{
               width: `${animatedProgress}%`,
               backgroundColor: category.color
             }}
           />
         </div>
-        <div className="category-progress-info">
-          <span className="category-progress-spent">{currency.symbol}{animatedSpent.toLocaleString()}</span>
-          <span className="category-progress-allocated">/ {formatCurrency(animatedAllocated)}</span>
+        <div className={styles.categoryProgressInfo}>
+          <span className={styles.categoryProgressSpent}>{currency.symbol}{animatedSpent.toLocaleString()}</span>
+          <span className={styles.categoryProgressAllocated}>/ {formatCurrency(animatedAllocated)}</span>
         </div>
       </div>
 
-      <div className="category-card-footer">
-        <span className="category-bucket-count">{stats.bucketCount} bucket{stats.bucketCount !== 1 ? 's' : ''}</span>
+      <div className={styles.categoryCardFooter}>
+        <span className={styles.categoryBucketCount}>{stats.bucketCount} bucket{stats.bucketCount !== 1 ? 's' : ''}</span>
       </div>
     </div>
   );
@@ -151,7 +152,7 @@ const CategoryGrid = ({ categories, buckets, onEdit, onDelete }: CategoryGridPro
   const activeCategories = categories.filter(c => !c.isDeleted);
 
   return (
-    <div className="category-grid">
+    <div className={styles.categoryGrid}>
       {activeCategories.map((category) => (
         <CategoryCard
           key={category.id}

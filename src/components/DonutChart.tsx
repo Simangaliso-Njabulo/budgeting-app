@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Cell, ResponsiveContainer, PieChart, Pie } from "recharts";
 import { useTheme } from "../context/ThemeContext";
 import type { CategoryData } from "../types";
+import styles from './DonutChart.module.css';
 
 interface DonutChartProps {
   data: CategoryData[];
@@ -43,9 +44,9 @@ const DonutChart = ({ data, unallocated = 0 }: DonutChartProps) => {
   };
 
   return (
-    <div className="chart-card">
-      <h3 className="chart-title">Budget Distribution by Category</h3>
-      <div className="chart-container">
+    <div className={styles.chartCard}>
+      <h3 className={styles.chartTitle}>Budget Distribution by Category</h3>
+      <div className={styles.chartContainer}>
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
             <defs>
@@ -94,11 +95,11 @@ const DonutChart = ({ data, unallocated = 0 }: DonutChartProps) => {
       </div>
 
       {/* Custom Legend with hover interaction */}
-      <div className="chart-legend">
+      <div className={styles.chartLegend}>
         {chartData.map((item, index) => (
           <div
             key={index}
-            className={`legend-item ${activeIndex === index ? 'legend-item-active' : ''}`}
+            className={`${styles.legendItem} ${activeIndex === index ? styles.legendItemActive : ''}`}
             onMouseEnter={() => handleLegendEnter(index)}
             onMouseLeave={handleLegendLeave}
             style={{
@@ -108,9 +109,9 @@ const DonutChart = ({ data, unallocated = 0 }: DonutChartProps) => {
               cursor: 'pointer'
             }}
           >
-            <div className="legend-left">
+            <div className={styles.legendLeft}>
               <div
-                className="legend-dot"
+                className={styles.legendDot}
                 style={{
                   backgroundColor: item.color,
                   boxShadow: activeIndex === index ? `0 0 8px ${item.color}` : 'none',
@@ -118,11 +119,11 @@ const DonutChart = ({ data, unallocated = 0 }: DonutChartProps) => {
                   transition: 'all 0.3s ease'
                 }}
               />
-              <span className="legend-label">{item.name}</span>
+              <span className={styles.legendLabel}>{item.name}</span>
             </div>
-            <div className="legend-right">
-              <span className="legend-value">{formatCurrency(item.value)}</span>
-              <span className="legend-percentage">{item.percentage}%</span>
+            <div className={styles.legendRight}>
+              <span className={styles.legendValue}>{formatCurrency(item.value)}</span>
+              <span className={styles.legendPercentage}>{item.percentage}%</span>
             </div>
           </div>
         ))}

@@ -1,6 +1,7 @@
 // src/components/common/Toast.tsx
 import { useEffect, useState } from 'react';
 import { CheckCircle, XCircle, AlertCircle, Info, X } from 'lucide-react';
+import styles from './Toast.module.css';
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -33,22 +34,29 @@ const Toast = ({ message, type, isVisible, onClose, duration = 4000, action }: T
   if (!isVisible && !isExiting) return null;
 
   const icons = {
-    success: <CheckCircle className="toast-icon" />,
-    error: <XCircle className="toast-icon" />,
-    warning: <AlertCircle className="toast-icon" />,
-    info: <Info className="toast-icon" />,
+    success: <CheckCircle className={styles.toastIcon} />,
+    error: <XCircle className={styles.toastIcon} />,
+    warning: <AlertCircle className={styles.toastIcon} />,
+    info: <Info className={styles.toastIcon} />,
+  };
+
+  const typeClasses = {
+    success: styles.toastSuccess,
+    error: styles.toastError,
+    warning: styles.toastWarning,
+    info: styles.toastInfo,
   };
 
   return (
-    <div className={`toast toast-${type} ${isExiting ? 'toast-exit' : 'toast-enter'}`}>
+    <div className={`${styles.toast} ${typeClasses[type]} ${isExiting ? styles.toastExit : styles.toastEnter}`}>
       {icons[type]}
-      <span className="toast-message">{message}</span>
+      <span className={styles.toastMessage}>{message}</span>
       {action && (
-        <button className="toast-action" onClick={action.onClick}>
+        <button className={styles.toastAction} onClick={action.onClick}>
           {action.label}
         </button>
       )}
-      <button className="toast-close" onClick={() => { setIsExiting(true); setTimeout(onClose, 300); }}>
+      <button className={styles.toastClose} onClick={() => { setIsExiting(true); setTimeout(onClose, 300); }}>
         <X className="h-4 w-4" />
       </button>
     </div>

@@ -1,6 +1,7 @@
 // src/components/common/Modal.tsx
 import { X } from 'lucide-react';
 import { useEffect, useRef } from 'react';
+import styles from './Modal.module.css';
 
 interface ModalProps {
   isOpen: boolean;
@@ -36,21 +37,21 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }: ModalProps) =>
   if (!isOpen) return null;
 
   const sizeClasses = {
-    sm: 'modal-sm',
-    md: 'modal-md',
-    lg: 'modal-lg',
+    sm: styles.modalSm,
+    md: styles.modalMd,
+    lg: styles.modalLg,
   };
 
   return (
-    <div className="modal-backdrop" onClick={handleBackdropClick}>
-      <div ref={modalRef} className={`modal-content ${sizeClasses[size]}`}>
-        <div className="modal-header">
-          <h2 className="modal-title">{title}</h2>
-          <button className="modal-close-btn" onClick={onClose}>
+    <div className={styles.modalBackdrop} onClick={handleBackdropClick}>
+      <div ref={modalRef} className={`${styles.modalContent} ${sizeClasses[size]}`}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>{title}</h2>
+          <button className={styles.modalCloseBtn} onClick={onClose}>
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div className="modal-body">
+        <div className={styles.modalBody}>
           {children}
         </div>
       </div>

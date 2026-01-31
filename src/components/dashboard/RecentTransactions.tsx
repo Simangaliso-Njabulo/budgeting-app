@@ -2,6 +2,7 @@
 import { ArrowRight, ArrowUpRight, ArrowDownRight, Home, ShoppingBag, Car, Utensils, Film, Briefcase, Heart, Gift, Plane, Smartphone, Zap, DollarSign } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import type { Transaction, Category } from '../../types';
+import styles from './RecentTransactions.module.css';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
@@ -64,21 +65,21 @@ const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit
   };
 
   return (
-    <div className="recent-transactions glass-card">
-      <div className="recent-transactions-header">
-        <h3 className="recent-transactions-title">Recent Transactions</h3>
-        <button className="recent-transactions-view-all" onClick={onViewAll}>
+    <div className={`${styles.container} glass-card`}>
+      <div className={styles.header}>
+        <h3 className={styles.title}>Recent Transactions</h3>
+        <button className={styles.viewAllButton} onClick={onViewAll}>
           View All <ArrowRight className="h-4 w-4" />
         </button>
       </div>
 
       {recentTransactions.length === 0 ? (
-        <div className="recent-transactions-empty">
+        <div className={styles.empty}>
           <p>No transactions yet</p>
         </div>
       ) : (
         <div
-          className="recent-transactions-list"
+          className={styles.list}
           style={{ '--visible-items': limit } as React.CSSProperties}
         >
           {recentTransactions.map((transaction, index) => {
@@ -89,13 +90,13 @@ const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit
             return (
               <div
                 key={transaction.id}
-                className="recent-transaction-item"
+                className={styles.item}
                 style={{ animationDelay: `${index * 60}ms` }}
                 onClick={() => onEdit(transaction)}
               >
-                <div className="recent-transaction-left">
+                <div className={styles.left}>
                   <div
-                    className="recent-transaction-icon"
+                    className={styles.icon}
                     style={{
                       backgroundColor: `${category?.color || '#a78bfa'}15`,
                       color: category?.color || '#a78bfa'
@@ -103,24 +104,24 @@ const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit
                   >
                     <Icon className="h-4 w-4" />
                   </div>
-                  <div className="recent-transaction-info">
-                    <span className="recent-transaction-description">{transaction.description}</span>
-                    <span className="recent-transaction-category">{category?.name}</span>
+                  <div className={styles.info}>
+                    <span className={styles.description}>{transaction.description}</span>
+                    <span className={styles.category}>{category?.name}</span>
                   </div>
                 </div>
-                <div className="recent-transaction-right">
-                  <div className="recent-transaction-amounts">
-                    <span className={`recent-transaction-amount ${isExpense ? 'expense' : 'income'}`}>
+                <div className={styles.right}>
+                  <div className={styles.amounts}>
+                    <span className={`${styles.amount} ${isExpense ? styles.expense : styles.income}`}>
                       {isExpense ? <ArrowDownRight className="h-3 w-3" /> : <ArrowUpRight className="h-3 w-3" />}
                       {isExpense ? '-' : '+'}{formatCurrency(transaction.amount)}
                     </span>
                     {balanceMap.has(transaction.id) && (
-                      <span className={`recent-transaction-balance ${balanceMap.get(transaction.id)! < 0 ? 'negative' : ''}`}>
+                      <span className={`${styles.balance} ${balanceMap.get(transaction.id)! < 0 ? styles.negative : ''}`}>
                         Bal: {formatCurrency(balanceMap.get(transaction.id)!)}
                       </span>
                     )}
                   </div>
-                  <span className="recent-transaction-date">{formatDate(transaction.date)}</span>
+                  <span className={styles.date}>{formatDate(transaction.date)}</span>
                 </div>
               </div>
             );

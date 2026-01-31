@@ -1,0 +1,145 @@
+/* StatCard Component Styles */
+
+.statCard {
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  transition: all 0.3s ease;
+  animation: cardEnter 0.5s ease both;
+}
+
+@keyframes cardEnter {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.statCard:hover {
+  transform: translateY(-6px) scale(1.02);
+  background: rgba(30, 41, 59, 0.7);
+  border-color: rgba(167, 139, 250, 0.2);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(167, 139, 250, 0.1),
+    0 0 30px rgba(167, 139, 250, 0.05);
+}
+
+.statCardContent {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  user-select: none;
+  cursor: default;
+}
+
+.statRingContainer {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  flex-shrink: 0;
+}
+
+.statRing {
+  width: 100%;
+  height: 100%;
+}
+
+.statRingProgress {
+  transition: stroke-dashoffset 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Icon in center - no background, just the icon */
+.statRingIconWrapper {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.statRingIconSvg {
+  width: 22px;
+  height: 22px;
+  color: inherit;
+}
+
+.statInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.statTitle {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  user-select: none;
+  cursor: default;
+}
+
+.statValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.statValueLarge {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.statTotal {
+  font-size: 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.statPercentage {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.statDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.statDetailRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.statDetailDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.statDetailDotAvailable {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.statDetailLabel {
+  color: var(--text-muted);
+  flex: 1;
+}
+
+.statDetailValue {
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}

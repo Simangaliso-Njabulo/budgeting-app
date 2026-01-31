@@ -1,5 +1,6 @@
 // src/components/FilterBar.tsx
 import { Filter, Search, Plus } from "lucide-react";
+import styles from './FilterBar.module.css';
 
 interface FilterOption {
   id: string;
@@ -30,19 +31,19 @@ const FilterBar = ({
   addButtonText = "Add New",
 }: FilterBarProps) => {
   return (
-    <div className="filter-bar">
-      <div className="filter-bar-left">
-        <div className="filter-icon-wrapper">
+    <div className={styles.filterBar}>
+      <div className={styles.filterBarLeft}>
+        <div className={styles.filterIconWrapper}>
           <Filter className="h-4 w-4" />
         </div>
-        <span className="filter-label">Filters</span>
+        <span className={styles.filterLabel}>Filters</span>
 
         {filters.map((filter) => (
-          <div key={filter.id} className="filter-dropdown">
+          <div key={filter.id} className={styles.filterDropdown}>
             <select
               value={filter.value}
               onChange={(e) => filter.onChange(e.target.value)}
-              className="filter-select"
+              className={styles.filterSelect}
             >
               <option value="">{filter.label}</option>
               {filter.options.map((option) => (
@@ -55,20 +56,20 @@ const FilterBar = ({
         ))}
       </div>
 
-      <div className="filter-bar-right">
-        <div className="search-wrapper">
-          <Search className="search-icon-external" />
+      <div className={styles.filterBarRight}>
+        <div className={styles.searchWrapper}>
+          <Search className={styles.searchIconExternal} />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={(e) => onSearchChange?.(e.target.value)}
-            className="search-input"
+            className={styles.searchInput}
           />
         </div>
 
         {onAddClick && (
-          <button onClick={onAddClick} className="add-button">
+          <button onClick={onAddClick} className={styles.addButton}>
             <Plus className="h-4 w-4" />
             <span>{addButtonText}</span>
           </button>

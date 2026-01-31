@@ -1,0 +1,83 @@
+/* Modal Component Styles */
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: modalBackdropEnter 0.2s ease;
+  cursor: default;
+}
+
+@keyframes modalBackdropEnter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.modalContent {
+  background: var(--bg-card-solid);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-lg);
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalEnter 0.2s ease;
+  cursor: default;
+  user-select: none;
+}
+
+@keyframes modalEnter {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modalSm { width: 400px; max-width: 90vw; }
+.modalMd { width: 500px; max-width: 90vw; }
+.modalLg { width: 650px; max-width: 90vw; }
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--glass-border);
+}
+
+.modalTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.modalCloseBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modalCloseBtn:hover {
+  background: rgba(252, 165, 165, 0.1);
+  color: var(--accent-red);
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.25);
+}
+
+.modalBody {
+  padding: 22px;
+}

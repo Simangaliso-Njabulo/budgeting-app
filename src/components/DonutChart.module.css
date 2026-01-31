@@ -1,0 +1,89 @@
+/* DonutChart Component Styles */
+
+.chartCard {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--border-radius-lg);
+  padding: 22px;
+}
+
+.chartTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 18px;
+  user-select: none;
+  cursor: default;
+}
+
+.chartContainer {
+  margin-bottom: 20px;
+}
+
+.chartLegend {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  user-select: none;
+  cursor: default;
+}
+
+.legendItem:hover {
+  background: rgba(167, 139, 250, 0.08);
+  transform: translateX(4px);
+}
+
+.legendItemActive {
+  background: rgba(167, 139, 250, 0.12);
+}
+
+.legendLeft {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.legendDot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.legendLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  user-select: none;
+  cursor: default;
+}
+
+.legendRight {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.legendValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.legendPercentage {
+  font-size: 12px;
+  color: var(--text-muted);
+  min-width: 45px;
+  text-align: right;
+}

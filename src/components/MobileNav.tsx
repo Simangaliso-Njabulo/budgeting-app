@@ -1,5 +1,6 @@
 // src/components/MobileNav.tsx
 import { LayoutDashboard, Wallet, ArrowUpDown, FolderOpen, Settings } from "lucide-react";
+import styles from './MobileNav.module.css';
 
 interface MobileNavProps {
   activeTab: string;
@@ -16,7 +17,7 @@ const MobileNav = ({ activeTab, setActiveTab }: MobileNavProps) => {
   ];
 
   return (
-    <nav className="mobile-nav">
+    <nav className={styles.mobileNav}>
       {navItems.map((item) => {
         const Icon = item.icon;
         const isActive = activeTab === item.id;
@@ -24,11 +25,11 @@ const MobileNav = ({ activeTab, setActiveTab }: MobileNavProps) => {
           <button
             key={item.id}
             onClick={() => setActiveTab(item.id)}
-            className={`mobile-nav-item ${isActive ? "mobile-nav-item-active" : ""}`}
+            className={`${styles.mobileNavItem} ${isActive ? styles.mobileNavItemActive : ""}`}
             aria-label={item.label}
           >
-            <Icon className="mobile-nav-icon" />
-            <span className="mobile-nav-label">{item.label}</span>
+            <Icon className={styles.mobileNavIcon} />
+            <span className={styles.mobileNavLabel}>{item.label}</span>
           </button>
         );
       })}

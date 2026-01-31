@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, Pencil, Wallet, Check } from '
 import { useTheme } from '../context/ThemeContext';
 import { Modal } from './common';
 import type { Income } from '../types';
+import styles from './MonthSelector.module.css';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -62,33 +63,33 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
 
   return (
     <>
-      <div className="month-selector">
-        <button className="month-selector-btn" onClick={handlePrev} title="Previous month">
+      <div className={styles.monthSelector}>
+        <button className={styles.monthSelectorBtn} onClick={handlePrev} title="Previous month">
           <ChevronLeft size={18} />
         </button>
 
-        <div className="month-selector-label">
+        <div className={styles.monthSelectorLabel}>
           <CalendarDays size={16} />
           <span>{MONTH_NAMES[month - 1]} {year}</span>
         </div>
 
-        <button className="month-selector-btn" onClick={handleNext} title="Next month">
+        <button className={styles.monthSelectorBtn} onClick={handleNext} title="Next month">
           <ChevronRight size={18} />
         </button>
 
         {!isCurrentMonth && (
-          <button className="month-selector-today" onClick={handleToday}>
+          <button className={styles.monthSelectorToday} onClick={handleToday}>
             Today
           </button>
         )}
 
         {income && onUpdateIncome && (
           <>
-            <div className="month-selector-divider" />
-            <button className="month-selector-income" onClick={openIncomeModal} title="Edit monthly income">
+            <div className={styles.monthSelectorDivider} />
+            <button className={styles.monthSelectorIncome} onClick={openIncomeModal} title="Edit monthly income">
               <Wallet size={14} />
               <span>{formatCurrency(income.amount)}</span>
-              <Pencil size={12} className="month-selector-edit-icon" />
+              <Pencil size={12} className={styles.monthSelectorEditIcon} />
             </button>
           </>
         )}

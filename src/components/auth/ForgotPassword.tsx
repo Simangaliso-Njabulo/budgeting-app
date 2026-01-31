@@ -1,14 +1,18 @@
 // src/components/auth/ForgotPassword.tsx
 import { useState } from 'react';
-import { Mail, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, AlertCircle, CheckCircle, ArrowLeft } from 'lucide-react';
 
 interface ForgotPasswordProps {
-  onResetPassword: (email: string) => void;
+  onResetPassword: (email: string, newPassword: string) => Promise<void>;
   onNavigate: (page: 'login') => void;
 }
 
 const ForgotPassword = ({ onResetPassword, onNavigate }: ForgotPasswordProps) => {
   const [email, setEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -22,12 +26,27 @@ const ForgotPassword = ({ onResetPassword, onNavigate }: ForgotPasswordProps) =>
       return;
     }
 
+    if (!newPassword) {
+      setError('Please enter a new password');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setIsLoading(true);
     try {
-      await onResetPassword(email);
+      await onResetPassword(email, newPassword);
       setSuccess(true);
     } catch {
-      setError('Failed to send reset email. Please try again.');
+      setError('Failed to reset password. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -66,8 +85,8 @@ const ForgotPassword = ({ onResetPassword, onNavigate }: ForgotPasswordProps) =>
             <h2 className="auth-title">Reset your password</h2>
             <p className="auth-subtitle">
               {success
-                ? 'Check your email for reset instructions'
-                : "Enter your email and we'll send you a reset link"}
+                ? 'Your password has been reset successfully'
+                : 'Enter your email and choose a new password'}
             </p>
           </div>
 
@@ -81,7 +100,7 @@ const ForgotPassword = ({ onResetPassword, onNavigate }: ForgotPasswordProps) =>
           {success ? (
             <div className="auth-success">
               <CheckCircle className="auth-success-icon" />
-              <span>Password reset email sent! Check your inbox.</span>
+              <span>Password reset successful! You can now sign in with your new password.</span>
             </div>
           ) : (
             <form className="auth-form" onSubmit={handleSubmit}>
@@ -100,8 +119,52 @@ const ForgotPassword = ({ onResetPassword, onNavigate }: ForgotPasswordProps) =>
                 </div>
               </div>
 
+              <div className="auth-input-group">
+                <label className="auth-label">New Password</label>
+                <div className="auth-input-wrapper">
+                  <Lock className="auth-input-icon" size={18} />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    className="auth-input"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="auth-input-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="auth-input-group">
+                <label className="auth-label">Confirm Password</label>
+                <div className="auth-input-wrapper">
+                  <Lock className="auth-input-icon" size={18} />
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    className="auth-input"
+                    placeholder="Confirm new password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
+                  />
+                  <button
+                    type="button"
+                    className="auth-input-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
               <button type="submit" className="auth-submit-btn" disabled={isLoading}>
-                {isLoading ? 'Sending...' : 'Send Reset Link'}
+                {isLoading ? 'Resetting...' : 'Reset Password'}
               </button>
             </form>
           )}

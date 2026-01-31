@@ -460,15 +460,9 @@ const BudgetingApp = () => {
     }
   };
 
-  const handleForgotPassword = async (_email: string) => {
-    // Backend doesn't have this yet - show message
-    showToast("Password reset is not yet implemented", "info");
-  };
-
-  const handleSocialLogin = async (
-    provider: "google" | "facebook" | "apple",
-  ) => {
-    showToast(`${provider} login is not yet implemented`, "info");
+  const handleForgotPassword = async (email: string, newPassword: string) => {
+    await authApi.resetPassword(email, newPassword);
+    showToast("Password reset successfully! You can now sign in.", "success");
   };
 
   const handleLogout = () => {
@@ -935,7 +929,6 @@ const BudgetingApp = () => {
         <SignUp
           onSignUp={handleSignUp}
           onNavigate={() => setAuthPage("login")}
-          onSocialLogin={handleSocialLogin}
         />
       );
     }
@@ -953,7 +946,6 @@ const BudgetingApp = () => {
       <Login
         onLogin={handleLogin}
         onNavigate={(page) => setAuthPage(page)}
-        onSocialLogin={handleSocialLogin}
       />
     );
   }

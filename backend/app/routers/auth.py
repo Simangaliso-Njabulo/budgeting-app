@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from ..database import get_db
 from ..models.user import User
-from ..schemas.user import UserCreate, UserResponse, UserLogin
+from ..schemas.user import UserCreate, UserResponse, UserLogin, PasswordResetDirect
 from ..schemas.auth import Token
 from ..utils.security import hash_password, verify_password, create_tokens, decode_token
 from ..services.seed_data import seed_user_data
@@ -114,6 +114,20 @@ async def refresh_token(refresh_token: str, db: AsyncSession = Depends(get_db)):
 
     tokens = create_tokens(str(user.id), user.email)
     return tokens
+
+
+@router.post("/reset-password")
+async def reset_password(data: PasswordResetDirect, db: AsyncSession = Depends(get_db)):
+    """Reset password directly (no email verification)."""
+    result = await db.execute(select(User).where(User.email == data.email))
+    user = result.scalar_one_or_none()
+
+    if user:
+        user.password_hash = hash_password(data.new_password)
+        await db.commit()
+
+    # Always return success to avoid revealing whether email exists
+    return {"message": "Password has been reset successfully"}
 
 
 @router.post("/logout")

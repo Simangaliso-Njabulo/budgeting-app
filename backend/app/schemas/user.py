@@ -36,6 +36,12 @@ class UserPasswordUpdate(BaseModel):
     new_password: str = Field(..., min_length=6, max_length=100)
 
 
+class PasswordResetDirect(BaseModel):
+    """Schema for direct password reset (no email verification)."""
+    email: EmailStr
+    new_password: str = Field(..., min_length=6, max_length=100)
+
+
 class UserResponse(UserBase):
     """Schema for user response."""
     id: UUID

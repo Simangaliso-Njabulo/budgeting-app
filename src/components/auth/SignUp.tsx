@@ -1,6 +1,7 @@
 // src/components/auth/SignUp.tsx
 import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, AlertCircle, User, ArrowLeft } from 'lucide-react';
+import AppLogo from '../common/AppLogo';
 
 interface SignUpProps {
   onSignUp: (name: string, email: string, password: string) => void;
@@ -82,22 +83,7 @@ const SignUp = ({ onSignUp, onNavigate }: SignUpProps) => {
           </button>
 
           <div className="auth-logo">
-            <svg className="auth-logo-icon" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="logoGradPurple2" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="50%" stopColor="#a78bfa" />
-                  <stop offset="100%" stopColor="#c4b5fd" />
-                </linearGradient>
-                <linearGradient id="dollarGradPurple2" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#7c3aed" />
-                  <stop offset="100%" stopColor="#a78bfa" />
-                </linearGradient>
-              </defs>
-              <circle cx="32" cy="32" r="28" stroke="url(#logoGradPurple2)" strokeWidth="2.5" fill="none" opacity="0.5" />
-              <circle cx="32" cy="32" r="24" fill="rgba(139, 92, 246, 0.12)" />
-              <text x="32" y="42" textAnchor="middle" fontSize="32" fontWeight="700" fontFamily="system-ui, -apple-system, sans-serif" fill="url(#dollarGradPurple2)">$</text>
-            </svg>
+            <AppLogo className="auth-logo-icon" />
             <h1 className="auth-logo-title">MyBudgeting App</h1>
           </div>
 

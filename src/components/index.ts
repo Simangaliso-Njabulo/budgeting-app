@@ -10,7 +10,6 @@ export { default as FilterBar } from './FilterBar';
 export { default as DonutChart } from './DonutChart';
 export { default as TransactionForm } from './TransactionForm';
 export { default as TransactionTable } from './TransactionTable';
-export { default as CategoryCard } from './CategoryCard';
 export { default as Settings } from './Settings';
 
 // Common components

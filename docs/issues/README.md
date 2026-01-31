@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 15
-- **Fixed:** 15
+- **Total Issues:** 16
+- **Fixed:** 16
 - **Open:** 0
 
 ## How to Use This Index
@@ -38,6 +38,7 @@
 | 013 | Form validation UX - buttons grayed out instead of showing helpful errors | ✅ Fixed | [013-form-validation-ux.md](013-form-validation-ux.md) |
 | 014 | Dashboard recent transactions not updating after save (requires browser refresh) | ✅ Fixed | [014-dashboard-refresh.md](014-dashboard-refresh.md) |
 | 015 | Properly set up Tailwind CSS to reduce CSS file size and improve maintainability | ✅ Fixed | [015-tailwind-setup.md](015-tailwind-setup.md) |
+| 016 | Codebase refactoring - reduce complexity and remove dead code | ✅ Fixed | [016-codebase-refactoring.md](016-codebase-refactoring.md) |
 
 ---
 
@@ -49,6 +50,7 @@
 - "dashboard" → finds issues 001, 014
 - "transaction" → finds issues 003, 004, 005, 006, 007, 009, 011, 013, 014
 - "validation" → finds issue 013
+- "refactoring" → finds issue 016
 
 **Search by status:**
 - "Fixed" → all resolved issues

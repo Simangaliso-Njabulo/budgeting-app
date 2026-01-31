@@ -1,6 +1,7 @@
 // src/components/dashboard/RecentTransactions.tsx
-import { ArrowRight, ArrowUpRight, ArrowDownRight, Home, ShoppingBag, Car, Utensils, Film, Briefcase, Heart, Gift, Plane, Smartphone, Zap, DollarSign } from 'lucide-react';
+import { ArrowRight, ArrowUpRight, ArrowDownRight, Home } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { ICON_MAP } from '../../utils/iconMap';
 import type { Transaction, Category } from '../../types';
 import styles from './RecentTransactions.module.css';
 
@@ -13,20 +14,6 @@ interface RecentTransactionsProps {
   monthlyIncome?: number;
 }
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  home: Home,
-  shopping: ShoppingBag,
-  car: Car,
-  food: Utensils,
-  entertainment: Film,
-  work: Briefcase,
-  health: Heart,
-  gift: Gift,
-  travel: Plane,
-  tech: Smartphone,
-  utilities: Zap,
-  income: DollarSign,
-};
 
 const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit = 5, monthlyIncome }: RecentTransactionsProps) => {
   const { formatCurrency } = useTheme();

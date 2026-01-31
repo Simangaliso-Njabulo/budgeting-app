@@ -1,7 +1,8 @@
 // src/components/categories/CategoryGrid.tsx
 import { useState, useEffect, useRef } from 'react';
-import { Edit2, Trash2, Home, ShoppingBag, Car, Utensils, Film, Briefcase, Heart, Gift, Plane, Smartphone, Zap, DollarSign } from 'lucide-react';
+import { Edit2, Trash2, Home } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { ICON_MAP } from '../../utils/iconMap';
 import type { Category, Bucket } from '../../types';
 import styles from './CategoryGrid.module.css';
 
@@ -48,20 +49,6 @@ interface CategoryGridProps {
   onDelete: (category: Category) => void;
 }
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  home: Home,
-  shopping: ShoppingBag,
-  car: Car,
-  food: Utensils,
-  entertainment: Film,
-  work: Briefcase,
-  health: Heart,
-  gift: Gift,
-  travel: Plane,
-  tech: Smartphone,
-  utilities: Zap,
-  income: DollarSign,
-};
 
 // Individual category card component with animations
 interface CategoryCardProps {

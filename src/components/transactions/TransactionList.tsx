@@ -1,7 +1,8 @@
 // src/components/transactions/TransactionList.tsx
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Edit2, Trash2, Home, ShoppingBag, Car, Utensils, Film, Briefcase, Heart, Gift, Plane, Smartphone, Zap, DollarSign, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Edit2, Trash2, Home, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { ICON_MAP } from '../../utils/iconMap';
 import type { Transaction, Category, Bucket } from '../../types';
 
 interface TransactionListProps {
@@ -14,20 +15,6 @@ interface TransactionListProps {
   onDelete: (transaction: Transaction) => void;
 }
 
-const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
-  home: Home,
-  shopping: ShoppingBag,
-  car: Car,
-  food: Utensils,
-  entertainment: Film,
-  work: Briefcase,
-  health: Heart,
-  gift: Gift,
-  travel: Plane,
-  tech: Smartphone,
-  utilities: Zap,
-  income: DollarSign,
-};
 
 // Swipeable transaction item component for mobile
 interface SwipeableItemProps {

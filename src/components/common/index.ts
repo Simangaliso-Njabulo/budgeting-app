@@ -5,3 +5,4 @@ export type { ToastType } from './Toast';
 export { default as ConfirmDialog } from './ConfirmDialog';
 export { default as EmptyState } from './EmptyState';
 export { default as FAB } from './FAB';
+export { default as AppLogo } from './AppLogo';

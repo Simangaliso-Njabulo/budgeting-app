@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -45,30 +44,8 @@ async def register(user_data: UserCreate, db: AsyncSession = Depends(get_db)):
 
 
 @router.post("/login", response_model=Token)
-async def login(
-    form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db),
-):
-    """Login and get JWT tokens."""
-    # Find user by email
-    result = await db.execute(select(User).where(User.email == form_data.username))
-    user = result.scalar_one_or_none()
-
-    if not user or not verify_password(form_data.password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid email or password",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
-    # Create tokens
-    tokens = create_tokens(str(user.id), user.email)
-    return tokens
-
-
-@router.post("/login/json", response_model=Token)
-async def login_json(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
-    """Login with JSON body (alternative to form data)."""
+async def login(credentials: UserLogin, db: AsyncSession = Depends(get_db)):
+    """Login with JSON body and get JWT tokens."""
     result = await db.execute(select(User).where(User.email == credentials.email))
     user = result.scalar_one_or_none()
 

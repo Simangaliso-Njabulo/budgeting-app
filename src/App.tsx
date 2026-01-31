@@ -981,55 +981,58 @@ const BudgetingApp = () => {
                 onUpdateIncome={handleUpdateIncome}
               />
 
-              {/* Total Spent Card */}
-              <StatCard
-                title="Total Spent"
-                value={totalSpent}
-                total={income.amount}
-                icon={Users}
-                gradient="bg-gradient-to-br from-purple-500 to-purple-600"
-                subtitle="spent this month"
-                delay={0}
-              />
+              {/* Dashboard Top Cards - Total Spent and Over Budget Alerts */}
+              <div className="dashboard-top-cards">
+                {/* Total Spent Card */}
+                <StatCard
+                  title="Total Spent"
+                  value={totalSpent}
+                  total={income.amount}
+                  icon={Users}
+                  gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+                  subtitle="spent this month"
+                  delay={0}
+                />
 
-              {/* Over Budget Alerts */}
-              <div className="over-budget-alerts glass-card">
-                <h3 className="over-budget-title">Over Budget Alerts</h3>
-                {buckets.filter(b => b.actual > b.allocated).length === 0 ? (
-                  <div className="over-budget-empty">
-                    <p>All buckets are within budget!</p>
-                  </div>
-                ) : (
-                  <div className="over-budget-list">
-                    {buckets
-                      .filter(b => b.actual > b.allocated)
-                      .sort((a, b) => (b.actual - b.allocated) - (a.actual - a.allocated))
-                      .map((bucket) => {
-                        const overage = bucket.actual - bucket.allocated;
-                        const percentage = bucket.allocated > 0
-                          ? ((overage / bucket.allocated) * 100).toFixed(0)
-                          : '100';
-                        return (
-                          <div key={bucket.id} className="over-budget-item">
-                            <div className="over-budget-item-left">
-                              <span className="over-budget-bucket-name">{bucket.name}</span>
-                              <span className="over-budget-amounts">
-                                {formatCurrency(bucket.actual)} / {formatCurrency(bucket.allocated)}
-                              </span>
+                {/* Over Budget Alerts */}
+                <div className="over-budget-alerts glass-card">
+                  <h3 className="over-budget-title">Over Budget Alerts</h3>
+                  {buckets.filter(b => b.actual > b.allocated).length === 0 ? (
+                    <div className="over-budget-empty">
+                      <p>All buckets are within budget!</p>
+                    </div>
+                  ) : (
+                    <div className="over-budget-list">
+                      {buckets
+                        .filter(b => b.actual > b.allocated)
+                        .sort((a, b) => (b.actual - b.allocated) - (a.actual - a.allocated))
+                        .map((bucket) => {
+                          const overage = bucket.actual - bucket.allocated;
+                          const percentage = bucket.allocated > 0
+                            ? ((overage / bucket.allocated) * 100).toFixed(0)
+                            : '100';
+                          return (
+                            <div key={bucket.id} className="over-budget-item">
+                              <div className="over-budget-item-left">
+                                <span className="over-budget-bucket-name">{bucket.name}</span>
+                                <span className="over-budget-amounts">
+                                  {formatCurrency(bucket.actual)} / {formatCurrency(bucket.allocated)}
+                                </span>
+                              </div>
+                              <div className="over-budget-item-right">
+                                <span className="over-budget-overage">
+                                  +{formatCurrency(overage)}
+                                </span>
+                                <span className="over-budget-percentage">
+                                  {percentage}% over
+                                </span>
+                              </div>
                             </div>
-                            <div className="over-budget-item-right">
-                              <span className="over-budget-overage">
-                                +{formatCurrency(overage)}
-                              </span>
-                              <span className="over-budget-percentage">
-                                {percentage}% over
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                  </div>
-                )}
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Dashboard Grid - Chart and Recent Transactions */}

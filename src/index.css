@@ -3563,11 +3563,24 @@ select option {
    DASHBOARD COMPONENTS
    ===================== */
 
+/* Dashboard Top Cards - side-by-side layout on desktop */
+.dashboard-top-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-top-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Over Budget Alerts */
 .over-budget-alerts {
   border-radius: var(--border-radius-lg);
   padding: 20px;
-  margin-top: 20px;
   cursor: default;
 }
 

@@ -1,9 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import {
   Users,
-  Wallet,
-  TrendingUp,
-  PiggyBank,
   FolderOpen,
   Receipt,
 } from "lucide-react";
@@ -792,18 +789,18 @@ const BudgetingApp = () => {
       await Promise.all([
         usersApi.updateMe({
           monthly_income: newIncome.amount,
-          savings_target: newIncome.savings,
+          savings_target: 0, // Deprecated
         }),
         monthlyIncomeApi.update(selectedPeriod.year, selectedPeriod.month, {
           amount: newIncome.amount,
-          savings_target: newIncome.savings,
+          savings_target: 0, // Deprecated
         }),
       ]);
       setIncome(newIncome);
       fetchTrends(); // Refresh trend data
-      showToast("Settings updated!", "success");
+      showToast("Income updated!", "success");
     } catch {
-      showToast("Failed to update settings", "error");
+      showToast("Failed to update income", "error");
     }
   };
 
@@ -984,46 +981,55 @@ const BudgetingApp = () => {
                 onUpdateIncome={handleUpdateIncome}
               />
 
-              {/* Stats Grid */}
-              <div className="stats-grid">
-                <StatCard
-                  title="Total Spent"
-                  value={totalSpent}
-                  total={income.amount}
-                  icon={Users}
-                  gradient="bg-gradient-to-br from-purple-500 to-purple-600"
-                  subtitle="spent"
-                  delay={0}
-                />
-                <StatCard
-                  title="Savings"
-                  value={income.savings}
-                  total={income.amount}
-                  icon={PiggyBank}
-                  gradient="bg-gradient-to-br from-green-500 to-green-600"
-                  subtitle="of income"
-                  delay={150}
-                  valueLabel="Target"
-                  remainingLabel="Available to Spend"
-                />
-                <StatCard
-                  title="Allocated"
-                  value={totalAllocated}
-                  total={income.amount}
-                  icon={Wallet}
-                  gradient="bg-gradient-to-br from-blue-500 to-blue-600"
-                  subtitle="budgeted"
-                  delay={300}
-                />
-                <StatCard
-                  title="Remaining"
-                  value={remaining > 0 ? remaining : 0}
-                  total={income.amount}
-                  icon={TrendingUp}
-                  gradient="bg-gradient-to-br from-orange-500 to-orange-600"
-                  subtitle="available"
-                  delay={450}
-                />
+              {/* Total Spent Card */}
+              <StatCard
+                title="Total Spent"
+                value={totalSpent}
+                total={income.amount}
+                icon={Users}
+                gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+                subtitle="spent this month"
+                delay={0}
+              />
+
+              {/* Over Budget Alerts */}
+              <div className="over-budget-alerts glass-card">
+                <h3 className="over-budget-title">Over Budget Alerts</h3>
+                {buckets.filter(b => b.actual > b.allocated).length === 0 ? (
+                  <div className="over-budget-empty">
+                    <p>All buckets are within budget!</p>
+                  </div>
+                ) : (
+                  <div className="over-budget-list">
+                    {buckets
+                      .filter(b => b.actual > b.allocated)
+                      .sort((a, b) => (b.actual - b.allocated) - (a.actual - a.allocated))
+                      .map((bucket) => {
+                        const overage = bucket.actual - bucket.allocated;
+                        const percentage = bucket.allocated > 0
+                          ? ((overage / bucket.allocated) * 100).toFixed(0)
+                          : '100';
+                        return (
+                          <div key={bucket.id} className="over-budget-item">
+                            <div className="over-budget-item-left">
+                              <span className="over-budget-bucket-name">{bucket.name}</span>
+                              <span className="over-budget-amounts">
+                                {formatCurrency(bucket.actual)} / {formatCurrency(bucket.allocated)}
+                              </span>
+                            </div>
+                            <div className="over-budget-item-right">
+                              <span className="over-budget-overage">
+                                +{formatCurrency(overage)}
+                              </span>
+                              <span className="over-budget-percentage">
+                                {percentage}% over
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
               </div>
 
               {/* Dashboard Grid - Chart and Recent Transactions */}

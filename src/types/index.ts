@@ -13,7 +13,7 @@ export interface AppSettings {
 // Income configuration
 export interface Income {
   amount: number;
-  savings: number;
+  savings?: number; // Deprecated - keeping for backwards compatibility
   currency?: string;
 }
 

@@ -1,6 +1,6 @@
 // src/components/MonthSelector.tsx
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, CalendarDays, Pencil, Wallet, PiggyBank, Check } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CalendarDays, Pencil, Wallet, Check } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { Modal } from './common';
 import type { Income } from '../types';
@@ -25,7 +25,6 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
 
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [incomeAmount, setIncomeAmount] = useState('');
-  const [savingsAmount, setSavingsAmount] = useState('');
 
   const handlePrev = () => {
     if (month === 1) {
@@ -49,7 +48,6 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
 
   const openIncomeModal = () => {
     setIncomeAmount(income?.amount?.toString() || '0');
-    setSavingsAmount(income?.savings?.toString() || '0');
     setIsIncomeModalOpen(true);
   };
 
@@ -57,7 +55,6 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
     if (onUpdateIncome) {
       onUpdateIncome({
         amount: parseFloat(incomeAmount) || 0,
-        savings: parseFloat(savingsAmount) || 0,
       });
     }
     setIsIncomeModalOpen(false);
@@ -118,22 +115,7 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
               placeholder="0"
               min="0"
               step="0.01"
-            />
-          </div>
-
-          <div className="settings-form-group">
-            <label className="settings-form-label">
-              <PiggyBank className="settings-form-icon" />
-              Savings Target
-            </label>
-            <input
-              type="number"
-              className="settings-currency-input"
-              value={savingsAmount}
-              onChange={(e) => setSavingsAmount(e.target.value)}
-              placeholder="0"
-              min="0"
-              step="0.01"
+              autoFocus
             />
           </div>
 

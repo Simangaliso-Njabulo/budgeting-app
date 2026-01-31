@@ -3563,6 +3563,96 @@ select option {
    DASHBOARD COMPONENTS
    ===================== */
 
+/* Over Budget Alerts */
+.over-budget-alerts {
+  border-radius: var(--border-radius-lg);
+  padding: 20px;
+  margin-top: 20px;
+  cursor: default;
+}
+
+.over-budget-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+  cursor: default;
+  user-select: none;
+}
+
+.over-budget-empty {
+  text-align: center;
+  padding: 30px;
+  color: var(--accent-green);
+  font-size: 14px;
+  cursor: default;
+  user-select: none;
+}
+
+.over-budget-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.over-budget-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  background: rgba(239, 68, 68, 0.05);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  transition: all 0.2s ease;
+  cursor: default;
+  user-select: none;
+}
+
+.over-budget-item:hover {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.3);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.1);
+}
+
+.over-budget-item-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.over-budget-bucket-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.over-budget-amounts {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.over-budget-item-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+}
+
+.over-budget-overage {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ef4444;
+}
+
+.over-budget-percentage {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.1);
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
 /* Recent Transactions Widget */
 .recent-transactions {
   border-radius: var(--border-radius-lg);

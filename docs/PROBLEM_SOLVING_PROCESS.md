@@ -2,23 +2,70 @@
 
 This document outlines the systematic approach used to solve bugs and implement features in this project.
 
+## Documentation Location
+
+**IMPORTANT:** All project documentation must be stored in the `docs/` folder:
+- Issue tracking: `docs/issues/` folder (individual issue files)
+  - Index: `docs/issues/README.md` (searchable table of all issues)
+  - Individual issues: `docs/issues/NNN-description.md`
+- Problem-solving process: `docs/PROBLEM_SOLVING_PROCESS.md`
+- Other documentation: `docs/`
+
+Do not create documentation files in the root directory.
+
+### Issue File Naming Convention
+
+**Format:** `NNN-short-description.md`
+- 3-digit number prefix (001, 002, 003...)
+- Kebab-case description (lowercase with hyphens)
+- Keep description concise but searchable (1-3 words focused on main concept)
+- When you hit 1000 issues, simply add a 4th digit (1000, 1001...)
+
+**Examples:**
+- `001-dashboard-layout.md`
+- `013-form-validation-ux.md`
+- `014-dashboard-refresh.md`
+
+**How users find issues:**
+1. Open `docs/issues/README.md`
+2. Use Ctrl+F to search for keywords in the table
+3. Click the link to view the full issue file
+
 ## The Process (Step-by-Step)
 
 ### 1. **Document the Issue First**
-- Create or update `ISSUES.md` with:
-  - Clear issue title and number
-  - Status: `[ ] Open` initially
-  - Location: File paths and line numbers
-  - Root Cause: Leave empty initially, fill after investigation
-  - Fix: Leave empty initially, fill after implementation
+- Create a new issue file in `docs/issues/NNN-description.md`:
+  - Determine the next issue number (check `docs/issues/README.md` for the latest)
+  - Create file with format: `NNN-short-description.md`
+  - Include in the file:
+    - Clear issue title and number
+    - Status: `⏳ Open` initially
+    - Location: File paths and line numbers
+    - Root Cause: Leave as "TBD" initially, fill after investigation
+    - Fix: Leave as "TBD" initially, fill after implementation
+- Add entry to `docs/issues/README.md` table
 
 **Example:**
+
+Create file `docs/issues/015-form-validation-ux.md`:
 ```markdown
-## Issue 8: Form validation UX - buttons grayed out instead of showing helpful errors
-- **Status:** [ ] Open
-- **Location:** TBD
-- **Root Cause:** TBD
-- **Fix:** TBD
+# Issue 015: Form validation UX - buttons grayed out instead of showing helpful errors
+
+**Status:** ⏳ Open
+
+## Location
+TBD
+
+## Root Cause
+TBD
+
+## Fix
+TBD
+```
+
+Then add to README.md table:
+```markdown
+| 015 | Form validation UX - buttons grayed out instead of showing helpful errors | ⏳ Open | [015-form-validation-ux.md](015-form-validation-ux.md) |
 ```
 
 ### 2. **Reproduce & Understand the Problem**
@@ -144,24 +191,41 @@ Run checks in this order:
    - Verify no regressions
 
 ### 7. **Update Documentation**
-Update `ISSUES.md` with complete information:
+Update the issue file in `docs/issues/NNN-description.md` with complete information:
 
+**Example:** Update `docs/issues/013-form-validation-ux.md`:
 ```markdown
-## Issue 8: Form validation UX - buttons grayed out instead of showing helpful errors
-- **Status:** [x] Fixed
-- **Location:** `src/components/transactions/TransactionForm.tsx` (validation logic, error display), `src/index.css` (error styles)
-- **Root Cause:** Both "Save Transaction" and "Save & Add Another" buttons were using `disabled={!isValid}` which grays them out when required fields are empty. This is bad UX because:
-  1. Users can't click to see what's wrong
-  2. No feedback on which fields are missing
-  3. "Save & Add Another" appeared clickable but did nothing (no validation messages)
-- **Fix:**
-  1. Removed `disabled` attribute from both buttons - both are now always clickable
-  2. Removed `required` attribute from inputs (no native HTML5 validation)
-  3. Added `errors` state object to track validation errors per field
-  4. Created `validateForm()` function that checks all fields and sets specific error messages
-  5. Added error styling: red borders on invalid fields, error text below each field
-  6. Errors clear when user starts typing in the field
-  7. Validation runs when either button is clicked, showing user-friendly messages
+# Issue 013: Form validation UX - buttons grayed out instead of showing helpful errors
+
+**Status:** ✅ Fixed
+
+## Location
+- [src/components/transactions/TransactionForm.tsx](../../src/components/transactions/TransactionForm.tsx) (validation logic, error display)
+- [src/index.css](../../src/index.css) (error styles)
+
+## Root Cause
+Both "Save Transaction" and "Save & Add Another" buttons were using `disabled={!isValid}` which grays them out when required fields are empty. This is bad UX because:
+1. Users can't click to see what's wrong
+2. No feedback on which fields are missing
+3. "Save & Add Another" appeared clickable but did nothing (no validation messages)
+
+## Fix
+1. Removed `disabled` attribute from both buttons - both are now always clickable
+2. Removed `required` attribute from inputs (no native HTML5 validation)
+3. Added `errors` state object to track validation errors per field
+4. Created `validateForm()` function that checks all fields and sets specific error messages
+5. Added error styling: red borders on invalid fields, error text below each field
+6. Errors clear when user starts typing in the field
+7. Validation runs when either button is clicked, showing user-friendly messages
+
+## Build Verification
+- TypeScript check: Passed (`npx tsc --noEmit`)
+- Production build: Succeeded (`npx vite build`)
+```
+
+Then update the status in `docs/issues/README.md`:
+```markdown
+| 013 | Form validation UX - buttons grayed out instead of showing helpful errors | ✅ Fixed | [013-form-validation-ux.md](013-form-validation-ux.md) |
 ```
 
 ### 8. **Mark Todo Items as Complete**
@@ -302,16 +366,18 @@ pattern="^import.*from"
 
 ## Checklist for Every Bug Fix
 
-- [ ] Document issue in ISSUES.md (Status: Open)
+- [ ] Create issue file in docs/issues/NNN-description.md (Status: ⏳ Open)
+- [ ] Add entry to docs/issues/README.md table
 - [ ] Reproduce the problem
 - [ ] Investigate root cause (not just symptoms)
 - [ ] Design a fix (consider multiple approaches)
 - [ ] Implement the fix (minimal, targeted changes)
 - [ ] Run TypeScript type check: `npx tsc --noEmit`
 - [ ] Run production build: `npx vite build`
-- [ ] Update ISSUES.md with root cause and fix details
-- [ ] Mark issue Status as [x] Fixed
-- [ ] Update build verification note in ISSUES.md
+- [ ] Update issue file with root cause and fix details
+- [ ] Mark issue Status as ✅ Fixed
+- [ ] Update status in docs/issues/README.md
+- [ ] Add build verification note to issue file
 - [ ] Mark todo items as completed
 
 ---
@@ -321,12 +387,25 @@ pattern="^import.*from"
 **User Report:** "Dashboard recent transactions require browser refresh to update"
 
 ### Step 1: Document
+Create `docs/issues/015-dashboard-refresh.md`:
 ```markdown
-## Issue 9: Dashboard recent transactions not updating after save
-- **Status:** [ ] Open
-- **Location:** TBD
-- **Root Cause:** TBD
-- **Fix:** TBD
+# Issue 015: Dashboard recent transactions not updating after save
+
+**Status:** ⏳ Open
+
+## Location
+TBD
+
+## Root Cause
+TBD
+
+## Fix
+TBD
+```
+
+Add to `docs/issues/README.md`:
+```markdown
+| 015 | Dashboard recent transactions not updating after save | ⏳ Open | [015-dashboard-refresh.md](015-dashboard-refresh.md) |
 ```
 
 ### Step 2: Reproduce & Understand
@@ -391,12 +470,29 @@ npx vite build    # ✓ Succeeded
 ```
 
 ### Step 7: Update Documentation
+Update `docs/issues/015-dashboard-refresh.md`:
 ```markdown
-## Issue 9: Dashboard recent transactions not updating after save
-- **Status:** [x] Fixed
-- **Location:** `src/App.tsx` (saveTransaction, line ~698-731)
-- **Root Cause:** Calling `setBuckets()` directly inside the `setTransactions()` updater function causes the state update to execute synchronously during the render phase. React's state updater functions should be pure, and calling another setState during an updater can cause batching issues where the component doesn't properly re-render with the new data.
-- **Fix:** Wrapped the `setBuckets()` call inside `queueMicrotask()` to defer it until after the `setTransactions` updater completes. This ensures React can properly batch the updates while keeping the bucket recalculation logic connected to the transaction list it depends on.
+# Issue 015: Dashboard recent transactions not updating after save
+
+**Status:** ✅ Fixed
+
+## Location
+- [src/App.tsx](../../src/App.tsx) (saveTransaction, line ~698-731)
+
+## Root Cause
+Calling `setBuckets()` directly inside the `setTransactions()` updater function causes the state update to execute synchronously during the render phase. React's state updater functions should be pure, and calling another setState during an updater can cause batching issues where the component doesn't properly re-render with the new data.
+
+## Fix
+Wrapped the `setBuckets()` call inside `queueMicrotask()` to defer it until after the `setTransactions` updater completes. This ensures React can properly batch the updates while keeping the bucket recalculation logic connected to the transaction list it depends on.
+
+## Build Verification
+- TypeScript check: Passed (`npx tsc --noEmit`)
+- Production build: Succeeded (`npx vite build`)
+```
+
+Update `docs/issues/README.md`:
+```markdown
+| 015 | Dashboard recent transactions not updating after save | ✅ Fixed | [015-dashboard-refresh.md](015-dashboard-refresh.md) |
 ```
 
 ### Step 8: Mark Complete
@@ -409,7 +505,8 @@ TodoWrite: Mark "Fix dashboard refresh issue" as completed
 ## Key Principles
 
 1. **Always document before, during, and after**
-   - ISSUES.md tracks the full journey
+   - docs/issues/ folder tracks the full journey of each issue
+   - Each issue gets its own file for easy reference
    - Future you (or others) will thank you
 
 2. **Understand root cause, don't patch symptoms**

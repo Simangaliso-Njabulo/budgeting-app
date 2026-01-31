@@ -2544,7 +2544,8 @@ select option {
   border-radius: 50px;
   color: #0f172a;
   font-weight: 600;
-  cursor: pointer;
+  cursor: default;
+  user-select: none;
   box-shadow: 0 8px 25px rgba(167, 139, 250, 0.4);
   transition: all 0.3s ease;
   z-index: 100;
@@ -3699,7 +3700,8 @@ select option {
   font-size: 12px;
   font-weight: 500;
   color: var(--text-secondary);
-  cursor: pointer;
+  cursor: default;
+  user-select: none;
   transition: all 0.2s ease;
 }
 

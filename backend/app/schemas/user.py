@@ -28,6 +28,7 @@ class UserUpdate(BaseModel):
     accent_color: str | None = Field(None, max_length=20)
     monthly_income: float | None = Field(None, ge=0)
     savings_target: float | None = Field(None, ge=0)
+    pay_date: int | None = Field(None, ge=1, le=31)
 
 
 class UserPasswordUpdate(BaseModel):
@@ -50,6 +51,7 @@ class UserResponse(UserBase):
     accent_color: str
     monthly_income: float
     savings_target: float
+    pay_date: int
     created_at: datetime
     updated_at: datetime
 

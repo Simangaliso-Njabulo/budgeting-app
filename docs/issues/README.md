@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 16
-- **Fixed:** 16
+- **Total Issues:** 17
+- **Fixed:** 17
 - **Open:** 0
 
 ## How to Use This Index
@@ -39,6 +39,7 @@
 | 014 | Dashboard recent transactions not updating after save (requires browser refresh) | ✅ Fixed | [014-dashboard-refresh.md](014-dashboard-refresh.md) |
 | 015 | Properly set up Tailwind CSS to reduce CSS file size and improve maintainability | ✅ Fixed | [015-tailwind-setup.md](015-tailwind-setup.md) |
 | 016 | Codebase refactoring - reduce complexity and remove dead code | ✅ Fixed | [016-codebase-refactoring.md](016-codebase-refactoring.md) |
+| 017 | Month selector not aligned with pay cycle | ✅ Fixed | [017-pay-cycle-months.md](017-pay-cycle-months.md) |
 
 ---
 
@@ -54,7 +55,8 @@
 
 **Search by status:**
 - "Fixed" → all resolved issues
-- "Open" → pending issues (none currently)
+- "Open" → pending issues
+- "pay cycle" → issue 017
 
 **Search by component:**
 - "Recent Transactions" → issues 003, 004, 005

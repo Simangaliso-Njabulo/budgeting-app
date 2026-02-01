@@ -16,6 +16,7 @@ import type {
   MonthlyTrendItem,
 } from '../types';
 import type { ToastType } from '../components';
+import { getCurrentPayCycle, getPayCycleStart, getPayCycleEnd } from '../utils/payCycle';
 
 // Transform API response to frontend types
 const transformCategory = (cat: Record<string, unknown>): Category => ({
@@ -67,6 +68,7 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
+  const [payDate, setPayDate] = useState(1);
   const [selectedPeriod, setSelectedPeriod] = useState<BudgetPeriod>(() => {
     const now = new Date();
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
@@ -170,6 +172,9 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     try {
       const userData = await authApi.getMe();
 
+      const userPayDate = Number(userData.pay_date) || 1;
+      setPayDate(userPayDate);
+
       setIncome({
         amount: Number(userData.monthly_income) || 0,
         savings: Number(userData.savings_target) || 0,
@@ -177,15 +182,15 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       });
 
       const now = new Date();
-      const currentYear = now.getFullYear();
-      const currentMonth = now.getMonth() + 1;
+      const currentCycle = getCurrentPayCycle(now, userPayDate);
+      setSelectedPeriod(currentCycle);
 
       const [categoriesData, bucketsData, transactionsData, monthlyData, trendsResponse] =
         await Promise.all([
           categoriesApi.getAll(),
           bucketsApi.getAll(),
           transactionsApi.getAll(),
-          monthlyIncomeApi.get(currentYear, currentMonth).catch(() => null),
+          monthlyIncomeApi.get(currentCycle.year, currentCycle.month).catch(() => null),
           monthlyIncomeApi.getTrends(6).catch(() => ({ data: [] })),
         ]);
 
@@ -243,12 +248,12 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
   // Computed values
   const totalAllocated = buckets.reduce((sum, b) => sum + b.allocated, 0);
 
+  const periodStart = getPayCycleStart(selectedPeriod, payDate);
+  const periodEnd = getPayCycleEnd(selectedPeriod, payDate);
+
   const periodTransactions = transactions.filter((tx) => {
     const txDate = new Date(tx.date);
-    return (
-      txDate.getFullYear() === selectedPeriod.year &&
-      txDate.getMonth() + 1 === selectedPeriod.month
-    );
+    return txDate >= periodStart && txDate <= periodEnd;
   });
 
   const periodSpent = periodTransactions
@@ -269,6 +274,8 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     setCategories,
     transactions,
     setTransactions,
+    payDate,
+    setPayDate,
     selectedPeriod,
     trendData,
     recentTxLimit,

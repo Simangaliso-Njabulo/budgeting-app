@@ -24,15 +24,15 @@ describe('EmptyState', () => {
 
     it('renders the icon', () => {
       render(<EmptyState {...defaultProps} />);
-      const iconContainer = document.querySelector('.empty-state-icon');
-      expect(iconContainer).toBeInTheDocument();
+      // Lucide icons render as SVG elements
+      expect(document.querySelector('svg')).toBeInTheDocument();
     });
 
-    it('applies correct CSS classes', () => {
-      render(<EmptyState {...defaultProps} />);
-      expect(document.querySelector('.empty-state')).toBeInTheDocument();
-      expect(document.querySelector('.empty-state-title')).toBeInTheDocument();
-      expect(document.querySelector('.empty-state-description')).toBeInTheDocument();
+    it('renders all structural elements', () => {
+      const { container } = render(<EmptyState {...defaultProps} />);
+      // Should have a wrapper div, heading, and paragraph
+      expect(container.querySelector('h3')).toBeInTheDocument();
+      expect(container.querySelector('p')).toBeInTheDocument();
     });
   });
 
@@ -87,9 +87,10 @@ describe('EmptyState', () => {
     });
 
     it('has accessible paragraph for description', () => {
-      render(<EmptyState {...defaultProps} />);
-      const description = document.querySelector('.empty-state-description');
-      expect(description?.tagName).toBe('P');
+      const { container } = render(<EmptyState {...defaultProps} />);
+      const paragraph = container.querySelector('p');
+      expect(paragraph?.tagName).toBe('P');
+      expect(paragraph?.textContent).toBe('No items to display');
     });
   });
 });

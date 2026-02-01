@@ -328,6 +328,7 @@ export const usersApi = {
     accent_color: string;
     monthly_income: number;
     savings_target: number;
+    pay_date: number;
   }>) => {
     const response = await fetchWithAuth('/users/me', {
       method: 'PUT',

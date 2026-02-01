@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, CalendarDays, Pencil, Wallet, Check } from '
 import { useTheme } from '../context/ThemeContext';
 import { Modal } from './common';
 import type { Income } from '../types';
+import { formatPayCycleRange } from '../utils/payCycle';
 import styles from './MonthSelector.module.css';
 
 const MONTH_NAMES = [
@@ -15,14 +16,14 @@ interface MonthSelectorProps {
   year: number;
   month: number; // 1-12
   onChange: (year: number, month: number) => void;
+  payDate?: number;
   income?: Income;
   onUpdateIncome?: (income: Income) => void;
 }
 
-const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthSelectorProps) => {
+const MonthSelector = ({ year, month, onChange, payDate = 1, income, onUpdateIncome }: MonthSelectorProps) => {
   const { formatCurrency } = useTheme();
-  const now = new Date();
-  const isCurrentMonth = year === now.getFullYear() && month === now.getMonth() + 1;
+  const dateRange = formatPayCycleRange({ year, month }, payDate);
 
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [incomeAmount, setIncomeAmount] = useState('');
@@ -41,10 +42,6 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
     } else {
       onChange(year, month + 1);
     }
-  };
-
-  const handleToday = () => {
-    onChange(now.getFullYear(), now.getMonth() + 1);
   };
 
   const openIncomeModal = () => {
@@ -70,18 +67,17 @@ const MonthSelector = ({ year, month, onChange, income, onUpdateIncome }: MonthS
 
         <div className={styles.monthSelectorLabel}>
           <CalendarDays size={16} />
-          <span>{MONTH_NAMES[month - 1]} {year}</span>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.2 }}>
+            <span>{MONTH_NAMES[month - 1]} {year}</span>
+            {dateRange && (
+              <span style={{ fontSize: '0.65rem', opacity: 0.6 }}>{dateRange}</span>
+            )}
+          </div>
         </div>
 
         <button className={styles.monthSelectorBtn} onClick={handleNext} title="Next month">
           <ChevronRight size={18} />
         </button>
-
-        {!isCurrentMonth && (
-          <button className={styles.monthSelectorToday} onClick={handleToday}>
-            Today
-          </button>
-        )}
 
         {income && onUpdateIncome && (
           <>

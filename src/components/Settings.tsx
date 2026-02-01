@@ -1,15 +1,18 @@
 // src/components/Settings.tsx
 import { useState } from 'react';
-import { Moon, Sun, Coins, Download, Trash2, Shield, Lock, LogOut, Camera, Mail, User, ChevronRight } from 'lucide-react';
+import { Moon, Sun, Coins, CalendarDays, Check, Download, Trash2, Shield, Lock, LogOut, Camera, Mail, User, ChevronRight } from 'lucide-react';
 import { useTheme, CURRENCIES } from '../context/ThemeContext';
 
 interface SettingsProps {
   user?: { name: string; email: string };
+  payDate?: number;
+  onUpdatePayDate?: (payDate: number) => void;
   onLogout?: () => void;
 }
 
-const Settings = ({ user, onLogout }: SettingsProps) => {
+const Settings = ({ user, payDate = 1, onUpdatePayDate, onLogout }: SettingsProps) => {
   const { theme, setTheme, currency, setCurrency } = useTheme();
+  const [payDateInput, setPayDateInput] = useState(payDate.toString());
 
   // Notification settings
   const [notifications, setNotifications] = useState({
@@ -98,6 +101,52 @@ const Settings = ({ user, onLogout }: SettingsProps) => {
           </div>
         </div>
       </div>
+
+      {/* Budget Cycle Section */}
+      {onUpdatePayDate && (
+        <div className="settings-section">
+          <h2 className="settings-section-title">Budget Cycle</h2>
+          <div className="settings-card">
+            <div className="settings-row" style={{ alignItems: 'flex-start' }}>
+              <div className="settings-row-info">
+                <span className="settings-row-label">Pay Day</span>
+                <span className="settings-row-description">
+                  Day of month you receive your salary. Your budget month runs from this day to the day before next pay day.
+                </span>
+              </div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div className="settings-select-wrapper">
+                  <CalendarDays className="settings-select-icon" />
+                  <select
+                    className="settings-select"
+                    value={payDateInput}
+                    onChange={(e) => setPayDateInput(e.target.value)}
+                  >
+                    {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                      <option key={day} value={day}>
+                        {day === 1 ? '1st (calendar month)' : day}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  className="settings-save-btn"
+                  style={{ padding: '0.5rem 1rem', whiteSpace: 'nowrap' }}
+                  onClick={() => {
+                    const val = parseInt(payDateInput, 10);
+                    if (val >= 1 && val <= 31) {
+                      onUpdatePayDate(val);
+                    }
+                  }}
+                >
+                  <Check size={16} />
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Section */}
       <div className="settings-section">

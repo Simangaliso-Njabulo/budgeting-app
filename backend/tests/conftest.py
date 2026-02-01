@@ -93,7 +93,7 @@ async def test_user(client: AsyncClient) -> dict:
     user = response.json()
 
     # Login to get tokens
-    login_response = await client.post("/api/auth/login/json", json={
+    login_response = await client.post("/api/auth/login", json={
         "email": user_data["email"],
         "password": user_data["password"]
     })

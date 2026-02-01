@@ -42,6 +42,8 @@ import {
   useTransactionActions,
 } from "./hooks";
 
+import { usersApi } from "./services/api";
+
 // Context
 import { useTheme } from "./context/ThemeContext";
 
@@ -75,6 +77,8 @@ const BudgetingApp = () => {
     setBuckets,
     categories,
     transactions,
+    payDate,
+    setPayDate,
     selectedPeriod,
     trendData,
     recentTxLimit,
@@ -218,6 +222,7 @@ const BudgetingApp = () => {
                 year={selectedPeriod.year}
                 month={selectedPeriod.month}
                 onChange={handlePeriodChange}
+                payDate={payDate}
                 income={income}
                 onUpdateIncome={handleUpdateIncome}
               />
@@ -510,6 +515,16 @@ const BudgetingApp = () => {
           {nav.activeTab === "settings" && (
             <Settings
               user={auth.user ? { name: auth.user.name, email: auth.user.email } : undefined}
+              payDate={payDate}
+              onUpdatePayDate={async (val: number) => {
+                try {
+                  await usersApi.updateMe({ pay_date: val });
+                  setPayDate(val);
+                  showToast('Pay date updated!', 'success');
+                } catch {
+                  showToast('Failed to update pay date', 'error');
+                }
+              }}
               onLogout={auth.handleLogout}
             />
           )}

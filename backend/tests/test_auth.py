@@ -55,11 +55,11 @@ class TestRegister:
 
 
 class TestLogin:
-    """Tests for user login."""
+    """Tests for user login (JSON endpoint)."""
 
-    async def test_login_json_success(self, client: AsyncClient, test_user: dict):
+    async def test_login_success(self, client: AsyncClient, test_user: dict):
         """Test successful login with JSON body."""
-        response = await client.post("/api/auth/login/json", json={
+        response = await client.post("/api/auth/login", json={
             "email": test_user["email"],
             "password": "testpassword123"
         })
@@ -72,7 +72,7 @@ class TestLogin:
 
     async def test_login_wrong_password(self, client: AsyncClient, test_user: dict):
         """Test login with wrong password fails."""
-        response = await client.post("/api/auth/login/json", json={
+        response = await client.post("/api/auth/login", json={
             "email": test_user["email"],
             "password": "wrongpassword"
         })
@@ -82,42 +82,76 @@ class TestLogin:
 
     async def test_login_nonexistent_user(self, client: AsyncClient):
         """Test login with non-existent user fails."""
-        response = await client.post("/api/auth/login/json", json={
+        response = await client.post("/api/auth/login", json={
             "email": "nonexistent@example.com",
             "password": "password123"
         })
 
         assert response.status_code == 401
 
-    async def test_login_form_success(self, client: AsyncClient, test_user: dict):
-        """Test successful login with form data."""
-        response = await client.post("/api/auth/login", data={
-            "username": test_user["email"],
-            "password": "testpassword123"
-        })
-
-        assert response.status_code == 200
-        data = response.json()
-        assert "access_token" in data
-        assert "refresh_token" in data
-
-    async def test_login_form_wrong_password(self, client: AsyncClient, test_user: dict):
-        """Test form login with wrong password fails."""
-        response = await client.post("/api/auth/login", data={
-            "username": test_user["email"],
-            "password": "wrongpassword"
-        })
-
-        assert response.status_code == 401
-
-    async def test_login_form_nonexistent_user(self, client: AsyncClient):
-        """Test form login with non-existent user fails."""
-        response = await client.post("/api/auth/login", data={
-            "username": "nonexistent@example.com",
+    async def test_login_missing_email(self, client: AsyncClient):
+        """Test login with missing email fails."""
+        response = await client.post("/api/auth/login", json={
             "password": "password123"
         })
 
-        assert response.status_code == 401
+        assert response.status_code == 422
+
+    async def test_login_missing_password(self, client: AsyncClient):
+        """Test login with missing password fails."""
+        response = await client.post("/api/auth/login", json={
+            "email": "test@example.com"
+        })
+
+        assert response.status_code == 422
+
+
+class TestResetPassword:
+    """Tests for password reset (direct, no email verification)."""
+
+    async def test_reset_password_success(self, client: AsyncClient, test_user: dict):
+        """Test resetting password successfully."""
+        response = await client.post("/api/auth/reset-password", json={
+            "email": test_user["email"],
+            "new_password": "newpassword456"
+        })
+
+        assert response.status_code == 200
+        assert "reset" in response.json()["message"].lower()
+
+        # Verify new password works
+        login_response = await client.post("/api/auth/login", json={
+            "email": test_user["email"],
+            "password": "newpassword456"
+        })
+        assert login_response.status_code == 200
+
+    async def test_reset_password_nonexistent_email(self, client: AsyncClient):
+        """Test reset with non-existent email still returns success (no info leak)."""
+        response = await client.post("/api/auth/reset-password", json={
+            "email": "nonexistent@example.com",
+            "new_password": "newpassword456"
+        })
+
+        # Should return success to avoid revealing whether email exists
+        assert response.status_code == 200
+
+    async def test_reset_password_missing_fields(self, client: AsyncClient):
+        """Test reset with missing fields fails."""
+        response = await client.post("/api/auth/reset-password", json={
+            "email": "test@example.com"
+        })
+
+        assert response.status_code == 422
+
+    async def test_reset_password_invalid_email(self, client: AsyncClient):
+        """Test reset with invalid email format fails."""
+        response = await client.post("/api/auth/reset-password", json={
+            "email": "not-an-email",
+            "new_password": "newpassword456"
+        })
+
+        assert response.status_code == 422
 
 
 class TestRefresh:
@@ -167,7 +201,7 @@ class TestRefreshEdgeCases:
         })
 
         # Login to get tokens
-        login_response = await client.post("/api/auth/login/json", json={
+        login_response = await client.post("/api/auth/login", json={
             "email": "todelete2@example.com",
             "password": "password123"
         })

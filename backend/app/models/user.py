@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, Numeric, func
+from sqlalchemy import String, DateTime, Integer, Numeric, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ..database import Base
@@ -39,6 +39,10 @@ class User(Base):
     savings_target: Mapped[float] = mapped_column(
         Numeric(12, 2),
         default=0,
+    )
+    pay_date: Mapped[int] = mapped_column(
+        Integer,
+        default=1,
     )
 
     # Timestamps

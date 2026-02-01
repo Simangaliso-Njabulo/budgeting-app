@@ -99,7 +99,7 @@ class TestChangePassword:
         assert response.status_code == 200
 
         # Verify new password works
-        login_response = await client.post("/api/auth/login/json", json={
+        login_response = await client.post("/api/auth/login", json={
             "email": test_user["email"],
             "password": "newpassword456"
         })
@@ -131,7 +131,7 @@ class TestDeleteUser:
         assert register_response.status_code == 201
 
         # Login
-        login_response = await client.post("/api/auth/login/json", json={
+        login_response = await client.post("/api/auth/login", json={
             "email": "todelete@example.com",
             "password": "password123"
         })
@@ -143,7 +143,7 @@ class TestDeleteUser:
         assert delete_response.status_code == 204
 
         # Verify can't login anymore
-        login_again = await client.post("/api/auth/login/json", json={
+        login_again = await client.post("/api/auth/login", json={
             "email": "todelete@example.com",
             "password": "password123"
         })

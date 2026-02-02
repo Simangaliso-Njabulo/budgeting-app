@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 17
-- **Fixed:** 17
+- **Total Issues:** 19
+- **Fixed:** 19
 - **Open:** 0
 
 ## How to Use This Index
@@ -40,6 +40,8 @@
 | 015 | Properly set up Tailwind CSS to reduce CSS file size and improve maintainability | ✅ Fixed | [015-tailwind-setup.md](015-tailwind-setup.md) |
 | 016 | Codebase refactoring - reduce complexity and remove dead code | ✅ Fixed | [016-codebase-refactoring.md](016-codebase-refactoring.md) |
 | 017 | Month selector not aligned with pay cycle | ✅ Fixed | [017-pay-cycle-months.md](017-pay-cycle-months.md) |
+| 018 | Transaction display bugs — decimal separator, refresh, order, trends | ✅ Fixed | [018-transaction-display-bugs.md](018-transaction-display-bugs.md) |
+| 019 | Recent Transactions should scroll to top after saving | ✅ Fixed | [019-recent-tx-scroll-to-top.md](019-recent-tx-scroll-to-top.md) |
 
 ---
 
@@ -49,16 +51,18 @@
 - "cursor" → finds issue 002
 - "balance" → finds issues 004, 009, 010, 012
 - "dashboard" → finds issues 001, 014
-- "transaction" → finds issues 003, 004, 005, 006, 007, 009, 011, 013, 014
+- "transaction" → finds issues 003, 004, 005, 006, 007, 009, 011, 013, 014, 018, 019
+- "decimal" → finds issue 018
+- "trends" → finds issue 018
 - "validation" → finds issue 013
 - "refactoring" → finds issue 016
 
 **Search by status:**
 - "Fixed" → all resolved issues
-- "Open" → pending issues
 - "pay cycle" → issue 017
+- "scroll" → issues 004, 005, 019
 
 **Search by component:**
-- "Recent Transactions" → issues 003, 004, 005
+- "Recent Transactions" → issues 003, 004, 005, 019
 - "TransactionList" → issues 009, 010, 011, 012
 - "StatCard" → issue 008

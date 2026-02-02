@@ -43,6 +43,7 @@ import {
 } from "./hooks";
 
 import { usersApi } from "./services/api";
+import { getCurrentPayCycle } from "./utils/payCycle";
 
 // Context
 import { useTheme } from "./context/ThemeContext";
@@ -520,6 +521,9 @@ const BudgetingApp = () => {
                 try {
                   await usersApi.updateMe({ pay_date: val });
                   setPayDate(val);
+                  // Navigate to the correct current pay cycle for the new pay date
+                  const cycle = getCurrentPayCycle(new Date(), val);
+                  handlePeriodChange(cycle.year, cycle.month);
                   showToast('Pay date updated!', 'success');
                 } catch {
                   showToast('Failed to update pay date', 'error');

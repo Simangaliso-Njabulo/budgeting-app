@@ -128,7 +128,7 @@ const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, on
 
   const handleAmountBlur = () => {
     if (form.amount > 0) {
-      setAmountDisplay(form.amount.toLocaleString());
+      setAmountDisplay(form.amount.toFixed(2));
     }
   };
 

@@ -1,4 +1,5 @@
 // src/components/dashboard/RecentTransactions.tsx
+import { useRef, useEffect } from 'react';
 import { ArrowRight, ArrowUpRight, ArrowDownRight, Home } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { ICON_MAP } from '../../utils/iconMap';
@@ -17,10 +18,20 @@ interface RecentTransactionsProps {
 
 const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit = 5, monthlyIncome }: RecentTransactionsProps) => {
   const { formatCurrency } = useTheme();
+  const listRef = useRef<HTMLDivElement>(null);
 
-  // Sort by date - show all transactions, scroll to see more
+  // Scroll to top when transactions change (e.g., after saving a new transaction)
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [transactions.length]);
+
+  // Sort by date descending, then by createdAt descending for same-date transactions
   const recentTransactions = [...transactions]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    .sort((a, b) => {
+      const dateDiff = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateDiff !== 0) return dateDiff;
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   // Calculate running balance for displayed transactions
   const balanceMap = new Map<string, number>();
@@ -66,6 +77,7 @@ const RecentTransactions = ({ transactions, categories, onViewAll, onEdit, limit
         </div>
       ) : (
         <div
+          ref={listRef}
           className={styles.list}
           style={{ '--visible-items': limit } as React.CSSProperties}
         >

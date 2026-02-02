@@ -1,7 +1,8 @@
+import calendar
 from datetime import date
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, extract
+from sqlalchemy import select, func, and_
 
 from ..database import get_db
 from ..models.user import User
@@ -16,6 +17,27 @@ from ..schemas.monthly_income import (
 from ..utils.dependencies import get_current_user
 
 router = APIRouter()
+
+
+def _clamp_day(year: int, month: int, day: int) -> int:
+    """Clamp a day to the last day of a given month."""
+    last_day = calendar.monthrange(year, month)[1]
+    return min(day, last_day)
+
+
+def _pay_cycle_start(year: int, month: int, pay_date: int) -> date:
+    """Get the start date of a pay cycle period."""
+    return date(year, month, _clamp_day(year, month, pay_date))
+
+
+def _current_pay_cycle(d: date, pay_date: int) -> tuple[int, int]:
+    """Determine which pay cycle a date falls into. Returns (year, month)."""
+    clamped = _clamp_day(d.year, d.month, pay_date)
+    if d.day >= clamped:
+        return (d.year, d.month)
+    if d.month == 1:
+        return (d.year - 1, 12)
+    return (d.year, d.month - 1)
 
 
 async def _get_or_create_monthly_income(
@@ -70,29 +92,26 @@ async def get_monthly_trends(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Get income vs expense trends for the last N months."""
+    """Get income vs expense trends for the last N pay cycles."""
     today = date.today()
+    pay_date = current_user.pay_date or 1
     trend_data: list[MonthlyTrendItem] = []
 
-    # Calculate start month by going back N months
-    current_year = today.year
-    current_month = today.month
+    # Determine current pay cycle and go back N months
+    cy, cm = _current_pay_cycle(today, pay_date)
 
     month_periods: list[tuple[int, int]] = []
     for _ in range(months):
-        month_periods.append((current_year, current_month))
-        current_month -= 1
-        if current_month == 0:
-            current_month = 12
-            current_year -= 1
+        month_periods.append((cy, cm))
+        cm -= 1
+        if cm == 0:
+            cm = 12
+            cy -= 1
 
     # Reverse so oldest is first
     month_periods.reverse()
 
-    # Get all monthly income records for the user in one query
-    start_year, start_month = month_periods[0]
-    end_year, end_month = month_periods[-1]
-
+    # Get all monthly income records
     income_records_result = await db.execute(
         select(MonthlyIncome).where(
             MonthlyIncome.user_id == current_user.id,
@@ -103,21 +122,25 @@ async def get_monthly_trends(
         for r in income_records_result.scalars().all()
     }
 
-    # Get transaction totals grouped by year, month, and type
-    # Calculate the earliest date we need
-    earliest_date = date(start_year, start_month, 1)
-    # Latest date: last day of end month
-    if end_month == 12:
-        latest_date = date(end_year + 1, 1, 1)
-    else:
-        latest_date = date(end_year, end_month + 1, 1)
+    # Calculate the full date range covering all pay cycles
+    first_year, first_month = month_periods[0]
+    last_year, last_month = month_periods[-1]
+    earliest_date = _pay_cycle_start(first_year, first_month, pay_date)
 
+    # End: start of the cycle AFTER the last period
+    next_month = last_month + 1
+    next_year = last_year
+    if next_month > 12:
+        next_month = 1
+        next_year += 1
+    latest_date = _pay_cycle_start(next_year, next_month, pay_date)
+
+    # Fetch all transactions in the date range
     tx_result = await db.execute(
         select(
-            extract("year", Transaction.date).label("tx_year"),
-            extract("month", Transaction.date).label("tx_month"),
+            Transaction.date,
             Transaction.type,
-            func.coalesce(func.sum(Transaction.amount), 0).label("total"),
+            Transaction.amount,
         )
         .where(
             and_(
@@ -126,18 +149,16 @@ async def get_monthly_trends(
                 Transaction.date < latest_date,
             )
         )
-        .group_by(
-            extract("year", Transaction.date),
-            extract("month", Transaction.date),
-            Transaction.type,
-        )
     )
     tx_rows = tx_result.all()
 
-    # Build lookup: (year, month, type) -> total
+    # Assign each transaction to its pay cycle and aggregate
     tx_totals: dict[tuple[int, int, str], float] = {}
     for row in tx_rows:
-        tx_totals[(int(row.tx_year), int(row.tx_month), row.type)] = float(row.total)
+        tx_date = row.date if isinstance(row.date, date) else row.date
+        cycle_year, cycle_month = _current_pay_cycle(tx_date, pay_date)
+        key = (cycle_year, cycle_month, row.type)
+        tx_totals[key] = tx_totals.get(key, 0.0) + float(row.amount)
 
     # Build trend data for each month
     default_income = float(current_user.monthly_income or 0)

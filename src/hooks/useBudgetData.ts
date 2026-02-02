@@ -252,7 +252,9 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
   const periodEnd = getPayCycleEnd(selectedPeriod, payDate);
 
   const periodTransactions = transactions.filter((tx) => {
-    const txDate = new Date(tx.date);
+    // Normalize to local midnight to avoid UTC vs local timezone mismatches
+    const d = new Date(tx.date);
+    const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
     return txDate >= periodStart && txDate <= periodEnd;
   });
 

@@ -547,8 +547,8 @@ const BudgetingApp = () => {
         </div>
       </main>
 
-      {/* FAB */}
-      {(nav.activeTab === "dashboard" || nav.activeTab === "transactions") && (
+      {/* FAB - available on all tabs except settings */}
+      {nav.activeTab !== "settings" && (
         <FAB onClick={txActions.openNewTransactionModal} label="Add Transaction" />
       )}
 

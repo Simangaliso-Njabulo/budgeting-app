@@ -3,6 +3,10 @@
 /* Google Fonts - Great Vibes for App Title (Signature Style) */
 @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
 
+html {
+  overflow-y: scroll;
+}
+
 * {
   margin: 0;
   padding: 0;

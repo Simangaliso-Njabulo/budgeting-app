@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 19
-- **Fixed:** 19
+- **Total Issues:** 20
+- **Fixed:** 20
 - **Open:** 0
 
 ## How to Use This Index
@@ -42,6 +42,7 @@
 | 017 | Month selector not aligned with pay cycle | ✅ Fixed | [017-pay-cycle-months.md](017-pay-cycle-months.md) |
 | 018 | Transaction display bugs — decimal separator, refresh, order, trends | ✅ Fixed | [018-transaction-display-bugs.md](018-transaction-display-bugs.md) |
 | 019 | Recent Transactions should scroll to top after saving | ✅ Fixed | [019-recent-tx-scroll-to-top.md](019-recent-tx-scroll-to-top.md) |
+| 020 | Pages should scroll to top on navigation; app should start at dashboard after login | ✅ Fixed | [020-navigation-scroll-dashboard.md](020-navigation-scroll-dashboard.md) |
 
 ---
 
@@ -50,7 +51,7 @@
 **Search by keyword:**
 - "cursor" → finds issue 002
 - "balance" → finds issues 004, 009, 010, 012
-- "dashboard" → finds issues 001, 014
+- "dashboard" → finds issues 001, 014, 020
 - "transaction" → finds issues 003, 004, 005, 006, 007, 009, 011, 013, 014, 018, 019
 - "decimal" → finds issue 018
 - "trends" → finds issue 018
@@ -60,7 +61,9 @@
 **Search by status:**
 - "Fixed" → all resolved issues
 - "pay cycle" → issue 017
-- "scroll" → issues 004, 005, 019
+- "scroll" → issues 004, 005, 019, 020
+- "navigation" → issue 020
+- "login" → issue 020
 
 **Search by component:**
 - "Recent Transactions" → issues 003, 004, 005, 019

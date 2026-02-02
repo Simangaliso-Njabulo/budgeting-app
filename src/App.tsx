@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Users, FolderOpen, Receipt } from "lucide-react";
 
 // Components
@@ -112,6 +112,18 @@ const BudgetingApp = () => {
 
   // Tab navigation and bucket filters
   const nav = useBucketFilters(buckets);
+
+  // Scroll to top when switching tabs
+  useEffect(() => {
+    window.scrollTo({ top: 0 });
+  }, [nav.activeTab]);
+
+  // Always start at dashboard after login
+  useEffect(() => {
+    if (auth.isAuthenticated) {
+      nav.setActiveTab("dashboard");
+    }
+  }, [auth.isAuthenticated]);
 
   // Bucket CRUD + transfers
   const bucketActions = useBucketActions({

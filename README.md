@@ -1,69 +1,87 @@
-# React + TypeScript + Vite
+# MyBudgeting
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A personal budgeting app with pay-cycle-aware budget periods, category-based expense tracking, and spending trends.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+**Frontend:** React 19, TypeScript, Vite, Tailwind CSS, Recharts, CSS Modules
 
-## Expanding the ESLint configuration
+**Backend:** FastAPI, SQLAlchemy (async), SQLite (aiosqlite), JWT auth, Alembic migrations
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Features
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- **Pay-cycle-aware periods** -- budget months align to your actual pay date (e.g., 28th), not calendar months
+- **Category & bucket budgeting** -- organize spending into categories with allocated budgets per bucket
+- **Dashboard** -- stat cards with animated progress rings, recent transactions with running balance, spending breakdown donut chart
+- **Monthly income tracking** -- per-month income overrides with inline editing from the month selector
+- **Spending trends** -- income vs expenses chart over the last 6 pay cycles
+- **Transaction management** -- add, edit, delete transactions with quick-date selectors and "Save & Add Another" flow
+- **Multi-currency support** -- configurable currency symbol and formatting
+- **Dark theme** -- glass-morphism UI with smooth animations
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js 18+
+- Python 3.11+
+
+### Backend
+
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate        # Windows
+# source venv/bin/activate   # macOS/Linux
+pip install -r requirements.txt
+uvicorn app.main:app --reload
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+The API runs at `http://localhost:8000` with docs at `/docs`.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### Frontend
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
+```
+
+The app runs at `http://localhost:5173`.
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start Vite dev server |
+| `npm run build` | TypeScript check + production build |
+| `npm run test` | Run Vitest in watch mode |
+| `npm run test:run` | Run all tests once |
+| `npm run test:coverage` | Run tests with coverage report |
+| `npm run test:backend` | Run backend pytest suite |
+| `npm run test:all` | Run frontend + backend tests |
+
+## Project Structure
+
+```
+src/
+  components/       # React components (dashboard, transactions, categories, common)
+  context/          # ThemeContext (currency, formatting)
+  hooks/            # useBudgetData, useToast, useCategoryActions, useTransactionActions
+  services/         # API client (auth, transactions, categories, buckets, monthly income)
+  utils/            # Formatters, validators, pay cycle helpers, icon map
+  types/            # TypeScript type definitions
+backend/
+  app/
+    models/         # SQLAlchemy models (User, Transaction, Category, Bucket, MonthlyIncome)
+    routers/        # FastAPI route handlers
+    schemas/        # Pydantic request/response schemas
+    services/       # Business logic
+    utils/          # Auth dependencies, helpers
+  alembic/          # Database migrations
+  tests/            # Backend tests
+tests/
+  L1-UnitTests/     # Unit tests (utils, hooks, components)
+  L2-IntegrationTests/ # Integration tests (hooks with mocked APIs)
+docs/
+  issues/           # Issue tracking (19 issues tracked, all resolved)
 ```

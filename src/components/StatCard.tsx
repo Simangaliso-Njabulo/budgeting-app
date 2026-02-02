@@ -12,8 +12,7 @@ interface StatCardProps {
   subtitle?: string;
   showProgress?: boolean;
   delay?: number;
-  valueLabel?: string;  // Label for the value row (default: "Used")
-  remainingLabel?: string;  // Label for the remaining row (default: "Available")
+  remainingLabel?: string;  // Label for the remaining/available row (default: "Available")
   hideTotal?: boolean;  // Hide the /total in the value row
 }
 
@@ -83,7 +82,6 @@ const StatCard = ({
   subtitle,
   showProgress = true,
   delay = 0,
-  valueLabel = "Used",
   remainingLabel = "Available",
   hideTotal = false
 }: StatCardProps) => {
@@ -170,21 +168,13 @@ const StatCard = ({
               {formatCurrency(animatedValue)}
             </span>
             {!hideTotal && total && total !== 100 && (
-              <span className={styles.statTotal}>/{formatCurrency(total)}</span>
+              <span className={styles.statTotal}> / {formatCurrency(total)}</span>
             )}
           </div>
           <div className={styles.statPercentage}>{percentage.toFixed(0)}% {subtitle || "used"}</div>
-          <div className={styles.statDetails}>
-            <div className={styles.statDetailRow}>
-              <span className={styles.statDetailDot} style={{ background: color.main }} />
-              <span className={styles.statDetailLabel}>{valueLabel}</span>
-              <span className={styles.statDetailValue}>{formatCurrency(animatedValue)}</span>
-            </div>
-            <div className={styles.statDetailRow}>
-              <span className={`${styles.statDetailDot} ${styles.statDetailDotAvailable}`} />
-              <span className={styles.statDetailLabel}>{remainingLabel}</span>
-              <span className={styles.statDetailValue}>{formatCurrency(total - animatedValue)}</span>
-            </div>
+          <div className={styles.statAvailable}>
+            <span className={styles.statAvailableLabel}>{remainingLabel}</span>
+            <span className={styles.statAvailableValue}>{formatCurrency(total - animatedValue)}</span>
           </div>
         </div>
       </div>

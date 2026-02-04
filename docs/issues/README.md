@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 20
-- **Fixed:** 20
+- **Total Issues:** 21
+- **Fixed:** 21
 - **Open:** 0
 
 ## How to Use This Index
@@ -43,6 +43,7 @@
 | 018 | Transaction display bugs — decimal separator, refresh, order, trends | ✅ Fixed | [018-transaction-display-bugs.md](018-transaction-display-bugs.md) |
 | 019 | Recent Transactions should scroll to top after saving | ✅ Fixed | [019-recent-tx-scroll-to-top.md](019-recent-tx-scroll-to-top.md) |
 | 020 | Pages should scroll to top on navigation; app should start at dashboard after login | ✅ Fixed | [020-navigation-scroll-dashboard.md](020-navigation-scroll-dashboard.md) |
+| 021 | Bucket page — status filter and category totals when filtering | ✅ Fixed | [021-bucket-status-filter-category-totals.md](021-bucket-status-filter-category-totals.md) |
 
 ---
 
@@ -69,3 +70,6 @@
 - "Recent Transactions" → issues 003, 004, 005, 019
 - "TransactionList" → issues 009, 010, 011, 012
 - "StatCard" → issue 008
+- "Buckets" → issue 021
+- "FilterBar" → issue 021
+- "category" → issue 021

@@ -53,14 +53,18 @@ function useBucketFilters(buckets: Bucket[]) {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); // "over" | "within" | ""
 
   const filteredBuckets = buckets.filter((bucket) => {
     const matchesSearch = bucket.name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = !categoryFilter || bucket.categoryId === categoryFilter;
-    return matchesSearch && matchesCategory;
+    const matchesStatus = !statusFilter ||
+      (statusFilter === "over" && bucket.actual > bucket.allocated) ||
+      (statusFilter === "within" && bucket.actual <= bucket.allocated);
+    return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  return { activeTab, setActiveTab, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, filteredBuckets };
+  return { activeTab, setActiveTab, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, statusFilter, setStatusFilter, filteredBuckets };
 }
 
 const BudgetingApp = () => {
@@ -307,51 +311,108 @@ const BudgetingApp = () => {
           )}
 
           {/* Buckets Tab */}
-          {nav.activeTab === "buckets" && (
+          {nav.activeTab === "buckets" && (() => {
+            // Compute category-specific totals when filtering by category
+            const selectedCategory = nav.categoryFilter
+              ? activeCategories.find((c) => c.id === nav.categoryFilter)
+              : null;
+            const categoryBuckets = nav.categoryFilter
+              ? buckets.filter((b) => b.categoryId === nav.categoryFilter)
+              : buckets;
+            const catAllocated = categoryBuckets.reduce((sum, b) => sum + b.allocated, 0);
+            const catSpent = categoryBuckets.reduce((sum, b) => sum + b.actual, 0);
+            const catRemaining = catAllocated - catSpent;
+
+            return (
             <div className="page-content">
               <div className="page-header">
                 <h1 className="page-title">Buckets</h1>
                 <p className="page-subtitle">Manage your budget buckets and allocations</p>
               </div>
 
-              <div className="budget-summary glass-card">
-                <div className="budget-summary-stats">
-                  <div>
-                    <span className="budget-summary-label">Total Income</span>
-                    <div className="budget-summary-value">{formatCurrency(income.amount)}</div>
-                  </div>
-                  <div>
-                    <span className="budget-summary-label">Allocated</span>
-                    <div className="budget-summary-value budget-summary-value--allocated">
-                      {formatCurrency(totalAllocated)}
+              {/* Global budget summary - shown when no category filter */}
+              {!nav.categoryFilter && (
+                <div className="budget-summary glass-card">
+                  <div className="budget-summary-stats">
+                    <div>
+                      <span className="budget-summary-label">Total Income</span>
+                      <div className="budget-summary-value">{formatCurrency(income.amount)}</div>
+                    </div>
+                    <div>
+                      <span className="budget-summary-label">Allocated</span>
+                      <div className="budget-summary-value budget-summary-value--allocated">
+                        {formatCurrency(totalAllocated)}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="budget-summary-label">Unallocated</span>
+                      <div
+                        className={`budget-summary-value ${
+                          remaining > 0
+                            ? "budget-summary-value--positive"
+                            : remaining < 0
+                              ? "budget-summary-value--negative"
+                              : ""
+                        }`}
+                      >
+                        {formatCurrency(remaining)}
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <span className="budget-summary-label">Unallocated</span>
-                    <div
-                      className={`budget-summary-value ${
-                        remaining > 0
-                          ? "budget-summary-value--positive"
-                          : remaining < 0
-                            ? "budget-summary-value--negative"
-                            : ""
-                      }`}
-                    >
-                      {formatCurrency(remaining)}
+                  {remaining > 0 && (
+                    <div className="budget-summary-badge budget-summary-badge--positive">
+                      {formatCurrency(remaining)} available for new buckets
                     </div>
-                  </div>
+                  )}
+                  {remaining < 0 && (
+                    <div className="budget-summary-badge budget-summary-badge--negative">
+                      Over-allocated by {formatCurrency(Math.abs(remaining))}
+                    </div>
+                  )}
                 </div>
-                {remaining > 0 && (
-                  <div className="budget-summary-badge budget-summary-badge--positive">
-                    {formatCurrency(remaining)} available for new buckets
+              )}
+
+              {/* Category-specific summary - shown when category filter is active */}
+              {nav.categoryFilter && selectedCategory && (
+                <div className="budget-summary glass-card" style={{ borderLeft: `3px solid ${selectedCategory.color}` }}>
+                  <div className="budget-summary-stats">
+                    <div>
+                      <span className="budget-summary-label">{selectedCategory.name} Allocated</span>
+                      <div className="budget-summary-value budget-summary-value--allocated">
+                        {formatCurrency(catAllocated)}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="budget-summary-label">Spent</span>
+                      <div className="budget-summary-value">{formatCurrency(catSpent)}</div>
+                    </div>
+                    <div>
+                      <span className="budget-summary-label">Remaining</span>
+                      <div
+                        className={`budget-summary-value ${
+                          catRemaining > 0
+                            ? "budget-summary-value--positive"
+                            : catRemaining < 0
+                              ? "budget-summary-value--negative"
+                              : ""
+                        }`}
+                      >
+                        {formatCurrency(catRemaining)}
+                      </div>
+                    </div>
                   </div>
-                )}
-                {remaining < 0 && (
-                  <div className="budget-summary-badge budget-summary-badge--negative">
-                    Over-allocated by {formatCurrency(Math.abs(remaining))}
-                  </div>
-                )}
-              </div>
+                  {catRemaining > 0 && (
+                    <div className="budget-summary-badge budget-summary-badge--positive">
+                      {formatCurrency(catRemaining)} left in {selectedCategory.name}
+                    </div>
+                  )}
+                  {catRemaining < 0 && (
+                    <div className="budget-summary-badge budget-summary-badge--negative">
+                      {selectedCategory.name} over budget by {formatCurrency(Math.abs(catRemaining))}
+                    </div>
+                  )}
+                </div>
+              )}
 
               <FilterBar
                 filters={[
@@ -361,6 +422,16 @@ const BudgetingApp = () => {
                     options: activeCategories.map((c) => ({ id: c.id, label: c.name })),
                     value: nav.categoryFilter,
                     onChange: nav.setCategoryFilter,
+                  },
+                  {
+                    id: "status",
+                    label: "All Status",
+                    options: [
+                      { id: "over", label: "Over Budget" },
+                      { id: "within", label: "Within Budget" },
+                    ],
+                    value: nav.statusFilter,
+                    onChange: nav.setStatusFilter,
                   },
                 ]}
                 searchPlaceholder="Search buckets..."
@@ -442,7 +513,8 @@ const BudgetingApp = () => {
                 </div>
               )}
             </div>
-          )}
+          );
+          })()}
 
           {/* Transactions Tab */}
           {nav.activeTab === "transactions" && (

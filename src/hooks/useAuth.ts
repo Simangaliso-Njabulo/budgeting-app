@@ -1,10 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import {
-  authApi,
-  usersApi,
-  getAccessToken,
-  clearTokens,
-} from '../services/api';
+import { userService, getCurrentUserId } from '../db';
 import type { ToastType } from '../components';
 
 interface User {
@@ -25,13 +20,23 @@ interface UseAuthOptions {
 }
 
 export function useAuth({ onAuthenticated, showToast, onLogoutCleanup }: UseAuthOptions) {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!getAccessToken());
+  const [isAuthenticated, setIsAuthenticated] = useState(!!getCurrentUserId());
   const [authPage, setAuthPage] = useState<'login' | 'signup' | 'forgot'>('login');
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const fetchUser = useCallback(async () => {
-    const userData = await usersApi.getMe();
+    const dbUser = await userService.getMe();
+    const userData: User = {
+      id: dbUser.id,
+      email: dbUser.email,
+      name: dbUser.name,
+      currency: dbUser.currency,
+      theme: dbUser.theme,
+      accent_color: dbUser.accentColor,
+      monthly_income: dbUser.monthlyIncome,
+      savings_target: dbUser.savingsTarget,
+    };
     setUser(userData);
     return userData;
   }, []);
@@ -39,12 +44,12 @@ export function useAuth({ onAuthenticated, showToast, onLogoutCleanup }: UseAuth
   // Check auth status on mount
   useEffect(() => {
     const checkAuth = async () => {
-      if (getAccessToken()) {
+      if (getCurrentUserId()) {
         try {
           await onAuthenticated();
           setIsAuthenticated(true);
         } catch {
-          clearTokens();
+          userService.logout();
           setIsAuthenticated(false);
         }
       }
@@ -54,27 +59,27 @@ export function useAuth({ onAuthenticated, showToast, onLogoutCleanup }: UseAuth
   }, [onAuthenticated]);
 
   const handleLogin = async (email: string, password: string) => {
-    await authApi.login(email, password);
+    await userService.login(email, password);
     await onAuthenticated();
     setIsAuthenticated(true);
     showToast('Welcome back!', 'success');
   };
 
   const handleSignUp = async (name: string, email: string, password: string) => {
-    await authApi.register(name, email, password);
-    await authApi.login(email, password);
+    await userService.register(name, email, password);
+    await userService.login(email, password);
     await onAuthenticated();
     setIsAuthenticated(true);
     showToast('Account created successfully!', 'success');
   };
 
   const handleForgotPassword = async (email: string, newPassword: string) => {
-    await authApi.resetPassword(email, newPassword);
+    await userService.resetPassword(email, newPassword);
     showToast('Password reset successfully! You can now sign in.', 'success');
   };
 
   const handleLogout = () => {
-    authApi.logout();
+    userService.logout();
     setUser(null);
     setIsAuthenticated(false);
     setAuthPage('login');

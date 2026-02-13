@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { transactionsApi } from '../services/api';
+import { transactionService, getCurrentUserId } from '../db';
 import type { Transaction, Bucket, NewTransactionForm } from '../types';
 import type { ToastType } from '../components';
-import { transformTransaction } from './useBudgetData';
 
 interface UseTransactionActionsOptions {
   transactions: Transaction[];
@@ -31,21 +30,23 @@ export function useTransactionActions({
 
   const saveTransaction = async (data: NewTransactionForm): Promise<boolean> => {
     try {
-      const apiData = {
+      const userId = getCurrentUserId();
+      if (!userId) return false;
+
+      const txData = {
         description: data.description,
         amount: data.amount,
         type: data.type,
         date: data.date.toISOString().split('T')[0],
-        category_id: data.categoryId || undefined,
-        bucket_id: data.bucketId || undefined,
+        categoryId: data.categoryId || undefined,
+        bucketId: data.bucketId || undefined,
         notes: data.notes,
       };
 
       if (editingTransaction) {
-        const updated = await transactionsApi.update(editingTransaction.id, apiData);
-        const transformedTx = transformTransaction(updated);
+        const updatedTx = await transactionService.update(editingTransaction.id, txData);
         setTransactions((prevTxs) => {
-          const newTxs = prevTxs.map((t) => (t.id === editingTransaction.id ? transformedTx : t));
+          const newTxs = prevTxs.map((t) => (t.id === editingTransaction.id ? updatedTx : t));
           queueMicrotask(() => {
             setBuckets((prevBuckets) => recalculateBucketSpending(newTxs, prevBuckets));
           });
@@ -53,8 +54,7 @@ export function useTransactionActions({
         });
         showToast('Transaction updated successfully!');
       } else {
-        const created = await transactionsApi.create(apiData);
-        const newTransaction = transformTransaction(created);
+        const newTransaction = await transactionService.create(userId, txData);
         setTransactions((prevTxs) => {
           const newTxs = [...prevTxs, newTransaction];
           queueMicrotask(() => {
@@ -93,7 +93,7 @@ export function useTransactionActions({
 
   const handleDeleteTransaction = async (transaction: Transaction) => {
     try {
-      await transactionsApi.delete(transaction.id);
+      await transactionService.delete(transaction.id);
       let updatedTransactions: Transaction[] = [];
       setTransactions((prev) => {
         updatedTransactions = prev.filter((t) => t.id !== transaction.id);

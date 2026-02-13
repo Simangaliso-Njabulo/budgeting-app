@@ -42,7 +42,7 @@ import {
   useTransactionActions,
 } from "./hooks";
 
-import { usersApi } from "./services/api";
+import { userService, getCurrentUserId } from "./db";
 import { getCurrentPayCycle } from "./utils/payCycle";
 
 // Context
@@ -603,7 +603,9 @@ const BudgetingApp = () => {
               payDate={payDate}
               onUpdatePayDate={async (val: number) => {
                 try {
-                  await usersApi.updateMe({ pay_date: val });
+                  const userId = getCurrentUserId();
+                  if (!userId) return;
+                  await userService.update(userId, { payDate: val });
                   setPayDate(val);
                   // Navigate to the correct current pay cycle for the new pay date
                   const cycle = getCurrentPayCycle(new Date(), val);

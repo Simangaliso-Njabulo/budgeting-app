@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { categoriesApi } from '../services/api';
+import { categoryService, getCurrentUserId } from '../db';
 import type { Category, NewCategoryForm } from '../types';
 import type { ToastType } from '../components';
-import { transformCategory } from './useBudgetData';
 
 interface UseCategoryActionsOptions {
   categories: Category[];
@@ -16,25 +15,28 @@ export function useCategoryActions({ categories, setCategories, showToast }: Use
 
   const handleSaveCategory = async (data: NewCategoryForm) => {
     try {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+
       if (editingCategory) {
-        const updated = await categoriesApi.update(editingCategory.id, {
+        const updated = await categoryService.update(editingCategory.id, {
           name: data.name,
           color: data.color,
           icon: data.icon,
           type: data.type,
         });
         setCategories(
-          categories.map((c) => (c.id === editingCategory.id ? transformCategory(updated) : c))
+          categories.map((c) => (c.id === editingCategory.id ? updated : c))
         );
         showToast('Category updated successfully!');
       } else {
-        const created = await categoriesApi.create({
+        const created = await categoryService.create(userId, {
           name: data.name,
           color: data.color,
           icon: data.icon,
           type: data.type,
         });
-        setCategories([...categories, transformCategory(created)]);
+        setCategories([...categories, created]);
         showToast('Category created successfully!');
       }
       setIsCategoryModalOpen(false);
@@ -51,7 +53,7 @@ export function useCategoryActions({ categories, setCategories, showToast }: Use
 
   const handleDeleteCategory = async (category: Category) => {
     try {
-      await categoriesApi.delete(category.id);
+      await categoryService.delete(category.id);
       setCategories(categories.filter((c) => c.id !== category.id));
       showToast('Category deleted', 'info');
     } catch {

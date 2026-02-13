@@ -1,7 +1,8 @@
 // src/components/Settings.tsx
-import { useState } from 'react';
-import { Moon, Sun, Coins, CalendarDays, Check, Download, Trash2, Shield, Lock, LogOut, Camera, Mail, User, ChevronRight } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Moon, Sun, Coins, CalendarDays, Check, Download, Upload, Trash2, Shield, Lock, LogOut, Camera, Mail, User, ChevronRight } from 'lucide-react';
 import { useTheme, CURRENCIES } from '../context/ThemeContext';
+import { downloadExport, importData, getCurrentUserId, db } from '../db';
 
 interface SettingsProps {
   user?: { name: string; email: string };
@@ -13,6 +14,7 @@ interface SettingsProps {
 const Settings = ({ user, payDate = 1, onUpdatePayDate, onLogout }: SettingsProps) => {
   const { theme, setTheme, currency, setCurrency } = useTheme();
   const [payDateInput, setPayDateInput] = useState(payDate.toString());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Notification settings
   const [notifications, setNotifications] = useState({
@@ -22,20 +24,44 @@ const Settings = ({ user, payDate = 1, onUpdatePayDate, onLogout }: SettingsProp
     savingsGoals: true,
   });
 
-  const handleExportCSV = () => {
-    // TODO: Implement CSV export
-    alert('CSV export coming soon!');
+  const handleExportData = async () => {
+    try {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+      await downloadExport(userId);
+    } catch {
+      alert('Failed to export data');
+    }
   };
 
-  const handleExportPDF = () => {
-    // TODO: Implement PDF export
-    alert('PDF export coming soon!');
+  const handleImportData = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+
+      const text = await file.text();
+      const result = await importData(text, userId);
+      alert(`Imported ${result.categories} categories, ${result.buckets} buckets, ${result.transactions} transactions, ${result.monthlyIncomes} monthly income records. Please refresh the page.`);
+    } catch (err) {
+      alert(`Failed to import data: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    }
+
+    // Reset file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  const handleClearData = () => {
-    if (confirm('Are you sure you want to clear all data? This cannot be undone.')) {
-      // TODO: Implement data clear
-      alert('Data cleared!');
+  const handleClearData = async () => {
+    if (confirm('Are you sure you want to clear ALL data including your account? This cannot be undone.')) {
+      try {
+        await db.delete();
+        localStorage.clear();
+        window.location.reload();
+      } catch {
+        alert('Failed to clear data');
+      }
     }
   };
 
@@ -280,14 +306,21 @@ const Settings = ({ user, payDate = 1, onUpdatePayDate, onLogout }: SettingsProp
         <h2 className="settings-section-title">Data</h2>
         <div className="settings-card">
           <div className="settings-data-actions">
-            <button className="settings-action-btn" onClick={handleExportCSV}>
+            <button className="settings-action-btn" onClick={handleExportData}>
               <Download className="settings-btn-icon" />
-              Export to CSV
+              Export Data (JSON)
             </button>
-            <button className="settings-action-btn" onClick={handleExportPDF}>
-              <Download className="settings-btn-icon" />
-              Export to PDF
+            <button className="settings-action-btn" onClick={() => fileInputRef.current?.click()}>
+              <Upload className="settings-btn-icon" />
+              Import Data (JSON)
             </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".json"
+              onChange={handleImportData}
+              style={{ display: 'none' }}
+            />
             <button className="settings-action-btn settings-action-btn-danger" onClick={handleClearData}>
               <Trash2 className="settings-btn-icon" />
               Clear All Data

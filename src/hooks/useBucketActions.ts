@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
-import { bucketsApi } from '../services/api';
+import { bucketService, getCurrentUserId } from '../db';
 import type { Bucket } from '../types';
 import type { ToastType } from '../components';
-import { transformBucket } from './useBudgetData';
 
 interface UseBucketActionsOptions {
   buckets: Bucket[];
@@ -54,7 +53,7 @@ export function useBucketActions({ buckets, setBuckets, showToast }: UseBucketAc
 
   const deleteBucket = async (id: string) => {
     try {
-      await bucketsApi.delete(id);
+      await bucketService.delete(id);
       setBuckets(buckets.filter((bucket) => bucket.id !== id));
       showToast('Bucket deleted', 'info');
     } catch {
@@ -71,24 +70,25 @@ export function useBucketActions({ buckets, setBuckets, showToast }: UseBucketAc
   const saveBucket = async () => {
     if (newBucket.name && newBucket.allocated > 0) {
       try {
+        const userId = getCurrentUserId();
+        if (!userId) return;
+
         if (editingBucket) {
-          const updated = await bucketsApi.update(editingBucket.id, {
+          const bucket = await bucketService.update(editingBucket.id, {
             name: newBucket.name,
             allocated: newBucket.allocated,
-            category_id: newBucket.categoryId || undefined,
+            categoryId: newBucket.categoryId || undefined,
           });
-          const bucket = transformBucket(updated);
           setBuckets(
             buckets.map((b) => (b.id === editingBucket.id ? { ...bucket, actual: b.actual } : b))
           );
           showToast('Bucket updated successfully!');
         } else {
-          const created = await bucketsApi.create({
+          const bucket = await bucketService.create(userId, {
             name: newBucket.name,
             allocated: newBucket.allocated,
-            category_id: newBucket.categoryId || undefined,
+            categoryId: newBucket.categoryId || undefined,
           });
-          const bucket = transformBucket(created);
           setBuckets([...buckets, { ...bucket, actual: 0 }]);
           showToast('Bucket created successfully!');
         }
@@ -122,8 +122,8 @@ export function useBucketActions({ buckets, setBuckets, showToast }: UseBucketAc
 
       try {
         await Promise.all([
-          bucketsApi.update(fromBucket.id, { allocated: fromBucket.allocated - transfer.amount }),
-          bucketsApi.update(toBucket.id, { allocated: toBucket.allocated + transfer.amount }),
+          bucketService.update(fromBucket.id, { allocated: fromBucket.allocated - transfer.amount }),
+          bucketService.update(toBucket.id, { allocated: toBucket.allocated + transfer.amount }),
         ]);
 
         setBuckets(

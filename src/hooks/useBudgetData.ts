@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
-  authApi,
-  categoriesApi,
-  bucketsApi,
-  transactionsApi,
-  monthlyIncomeApi,
-  usersApi,
-} from '../services/api';
+  userService,
+  getCurrentUserId,
+  categoryService,
+  bucketService,
+  transactionService,
+  monthlyIncomeService,
+} from '../db';
 import type {
   Income,
   Bucket,
@@ -17,46 +17,6 @@ import type {
 } from '../types';
 import type { ToastType } from '../components';
 import { getCurrentPayCycle, getPayCycleStart, getPayCycleEnd } from '../utils/payCycle';
-
-// Transform API response to frontend types
-const transformCategory = (cat: Record<string, unknown>): Category => ({
-  id: cat.id as string,
-  name: cat.name as string,
-  color: cat.color as string,
-  icon: cat.icon as string | undefined,
-  type: cat.type as 'expense' | 'income' | 'both',
-  isDeleted: cat.is_deleted as boolean,
-  deletedAt: cat.deleted_at ? new Date(cat.deleted_at as string) : undefined,
-  createdAt: cat.created_at ? new Date(cat.created_at as string) : undefined,
-  updatedAt: cat.updated_at ? new Date(cat.updated_at as string) : undefined,
-});
-
-const transformBucket = (bucket: Record<string, unknown>): Bucket => ({
-  id: bucket.id as string,
-  name: bucket.name as string,
-  allocated: Number(bucket.allocated) || 0,
-  actual: 0,
-  categoryId: (bucket.category_id as string) || '',
-  icon: bucket.icon as string | undefined,
-  color: bucket.color as string | undefined,
-  createdAt: bucket.created_at ? new Date(bucket.created_at as string) : undefined,
-  updatedAt: bucket.updated_at ? new Date(bucket.updated_at as string) : undefined,
-});
-
-const transformTransaction = (tx: Record<string, unknown>): Transaction => ({
-  id: tx.id as string,
-  description: tx.description as string,
-  amount: Number(tx.amount) || 0,
-  type: tx.type as 'income' | 'expense',
-  categoryId: (tx.category_id as string) || '',
-  bucketId: tx.bucket_id as string | undefined,
-  date: new Date(tx.date as string),
-  notes: tx.notes as string | undefined,
-  createdAt: new Date(tx.created_at as string),
-  updatedAt: new Date(tx.updated_at as string),
-});
-
-export { transformCategory, transformBucket, transformTransaction };
 
 interface UseBudgetDataOptions {
   showToast: (message: string, type?: ToastType) => void;
@@ -111,17 +71,18 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
   const fetchTrends = useCallback(async () => {
     try {
-      const trendsResponse = await monthlyIncomeApi.getTrends(6);
-      setTrendData(
-        trendsResponse.data.map((item: Record<string, unknown>) => ({
-          year: item.year as number,
-          month: item.month as number,
-          income: Number(item.income) || 0,
-          expenses: Number(item.expenses) || 0,
-          savingsTarget: Number(item.savings_target) || 0,
-          net: Number(item.net) || 0,
-        }))
+      const userId = getCurrentUserId();
+      if (!userId) return;
+
+      const user = await userService.getMe();
+      const trends = await monthlyIncomeService.getTrends(
+        userId,
+        6,
+        user.payDate,
+        user.monthlyIncome,
+        user.savingsTarget
       );
+      setTrendData(trends);
     } catch {
       // Trends are non-critical
     }
@@ -129,10 +90,20 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
   const fetchMonthlyIncome = useCallback(async (year: number, month: number) => {
     try {
-      const monthlyData = await monthlyIncomeApi.get(year, month);
+      const userId = getCurrentUserId();
+      if (!userId) return;
+
+      const user = await userService.getMe();
+      const monthlyData = await monthlyIncomeService.get(
+        userId,
+        year,
+        month,
+        user.monthlyIncome,
+        user.savingsTarget
+      );
       setIncome({
-        amount: Number(monthlyData.amount) || 0,
-        savings: Number(monthlyData.savings_target) || 0,
+        amount: monthlyData.amount,
+        savings: monthlyData.savingsTarget,
       });
     } catch {
       // Fall back to user defaults
@@ -149,14 +120,17 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
   const handleUpdateIncome = async (newIncome: Income) => {
     try {
+      const userId = getCurrentUserId();
+      if (!userId) return;
+
       await Promise.all([
-        usersApi.updateMe({
-          monthly_income: newIncome.amount,
-          savings_target: 0,
+        userService.update(userId, {
+          monthlyIncome: newIncome.amount,
+          savingsTarget: 0,
         }),
-        monthlyIncomeApi.update(selectedPeriod.year, selectedPeriod.month, {
+        monthlyIncomeService.update(userId, selectedPeriod.year, selectedPeriod.month, {
           amount: newIncome.amount,
-          savings_target: 0,
+          savingsTarget: 0,
         }),
       ]);
       setIncome(newIncome);
@@ -167,17 +141,19 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     }
   };
 
-  // Fetch all data from API
+  // Fetch all data from IndexedDB
   const fetchData = useCallback(async () => {
     try {
-      const userData = await authApi.getMe();
+      const userId = getCurrentUserId();
+      if (!userId) throw new Error('Not authenticated');
 
-      const userPayDate = Number(userData.pay_date) || 1;
+      const userData = await userService.getMe();
+      const userPayDate = userData.payDate || 1;
       setPayDate(userPayDate);
 
       setIncome({
-        amount: Number(userData.monthly_income) || 0,
-        savings: Number(userData.savings_target) || 0,
+        amount: userData.monthlyIncome || 0,
+        savings: userData.savingsTarget || 0,
         currency: userData.currency,
       });
 
@@ -185,40 +161,31 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       const currentCycle = getCurrentPayCycle(now, userPayDate);
       setSelectedPeriod(currentCycle);
 
-      const [categoriesData, bucketsData, transactionsData, monthlyData, trendsResponse] =
+      const [categoriesData, bucketsData, transactionsData, monthlyData, trendsData] =
         await Promise.all([
-          categoriesApi.getAll(),
-          bucketsApi.getAll(),
-          transactionsApi.getAll(),
-          monthlyIncomeApi.get(currentCycle.year, currentCycle.month).catch(() => null),
-          monthlyIncomeApi.getTrends(6).catch(() => ({ data: [] })),
+          categoryService.getAll(userId),
+          bucketService.getAll(userId),
+          transactionService.getAll(userId),
+          monthlyIncomeService
+            .get(userId, currentCycle.year, currentCycle.month, userData.monthlyIncome, userData.savingsTarget)
+            .catch(() => null),
+          monthlyIncomeService
+            .getTrends(userId, 6, userPayDate, userData.monthlyIncome, userData.savingsTarget)
+            .catch(() => []),
         ]);
 
       if (monthlyData) {
         setIncome({
-          amount: Number(monthlyData.amount) || 0,
-          savings: Number(monthlyData.savings_target) || 0,
+          amount: monthlyData.amount || 0,
+          savings: monthlyData.savingsTarget || 0,
         });
       }
 
-      setTrendData(
-        (trendsResponse.data || []).map((item: Record<string, unknown>) => ({
-          year: item.year as number,
-          month: item.month as number,
-          income: Number(item.income) || 0,
-          expenses: Number(item.expenses) || 0,
-          savingsTarget: Number(item.savings_target) || 0,
-          net: Number(item.net) || 0,
-        }))
-      );
-
-      setCategories(categoriesData.map(transformCategory));
-
-      const transformedBuckets = bucketsData.map(transformBucket);
-      const transformedTransactions = transactionsData.map(transformTransaction);
+      setTrendData(trendsData);
+      setCategories(categoriesData);
 
       const bucketSpending: Record<string, number> = {};
-      transformedTransactions.forEach((tx: Transaction) => {
+      transactionsData.forEach((tx: Transaction) => {
         if (tx.bucketId) {
           if (tx.type === 'expense') {
             bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
@@ -229,13 +196,13 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       });
 
       setBuckets(
-        transformedBuckets.map((b: Bucket) => ({
+        bucketsData.map((b: Bucket) => ({
           ...b,
           actual: Math.max(0, bucketSpending[b.id] || 0),
         }))
       );
 
-      setTransactions(transformedTransactions);
+      setTransactions(transactionsData);
 
       return userData;
     } catch (error) {
@@ -295,10 +262,5 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     totalSpent,
     remaining,
     activeCategories,
-
-    // Transform helpers
-    transformCategory,
-    transformBucket,
-    transformTransaction,
   };
 }

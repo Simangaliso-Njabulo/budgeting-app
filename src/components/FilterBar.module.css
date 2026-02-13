@@ -162,9 +162,17 @@
     gap: 8px;
   }
 
+  .searchWrapper {
+    width: 100%;
+  }
+
   .searchInput {
     width: 100%;
     flex: 1;
+  }
+
+  .searchIconExternal {
+    display: none;
   }
 
   .addButton {

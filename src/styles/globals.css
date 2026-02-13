@@ -2108,6 +2108,34 @@ select option {
     display: none;
   }
 
+  /* Transaction filters mobile — stack vertically, full width */
+  .transaction-filters {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .transaction-filters-left {
+    gap: 8px;
+  }
+
+  .transaction-filters-right {
+    width: 100%;
+  }
+
+  .filter-date-range {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .filter-date-input {
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    padding: 7px 8px;
+  }
+
   /* Transaction summary mobile layout - prevent net from being chopped */
   .transaction-summary {
     padding: 14px 16px;

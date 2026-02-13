@@ -4,7 +4,7 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/budgeting_app/',
+  base: '/budgeting-app/',
   plugins: [
     react(),
     VitePWA({
@@ -17,8 +17,8 @@ export default defineConfig({
         theme_color: '#8b5cf6',
         background_color: '#0f0f23',
         display: 'standalone',
-        scope: '/budgeting_app/',
-        start_url: '/budgeting_app/',
+        scope: '/budgeting-app/',
+        start_url: '/budgeting-app/',
         icons: [
           {
             src: 'pwa-192x192.png',

@@ -7,6 +7,7 @@ interface CategoryFormProps {
   category?: Category;
   onSave: (data: NewCategoryForm) => void;
   onCancel: () => void;
+  onDelete?: () => void;
 }
 
 const ICONS = [
@@ -33,7 +34,7 @@ const COLORS = [
   '#67e8f9', '#22d3ee', '#06b6d4', // Cyans
 ];
 
-const CategoryForm = ({ category, onSave, onCancel }: CategoryFormProps) => {
+const CategoryForm = ({ category, onSave, onCancel, onDelete }: CategoryFormProps) => {
   const [form, setForm] = useState<NewCategoryForm>({
     name: '',
     color: COLORS[0],
@@ -163,6 +164,19 @@ const CategoryForm = ({ category, onSave, onCancel }: CategoryFormProps) => {
           {category ? 'Update Category' : 'Create Category'}
         </button>
       </div>
+
+      {/* Delete button (shown only when editing) */}
+      {category && onDelete && (
+        <div className="form-delete-section">
+          <button
+            type="button"
+            className="btn btn-danger btn-delete-transaction"
+            onClick={onDelete}
+          >
+            Delete Category
+          </button>
+        </div>
+      )}
     </form>
   );
 };

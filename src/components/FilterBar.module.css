@@ -135,3 +135,48 @@
     0 8px 20px rgba(167, 139, 250, 0.3),
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
+
+/* Mobile: stack filters so dropdowns don't overflow */
+@media (max-width: 768px) {
+  .filterBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .filterBarLeft {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .filterSelect {
+    min-width: 0;
+    flex: 1;
+    font-size: 12px;
+    padding: 7px 28px 7px 10px;
+  }
+
+  .filterBarRight {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .searchInput {
+    width: 100%;
+    flex: 1;
+  }
+
+  .addButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .filterLabel {
+    display: none;
+  }
+
+  .filterIconWrapper {
+    display: none;
+  }
+}

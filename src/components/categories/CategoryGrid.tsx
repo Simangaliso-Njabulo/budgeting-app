@@ -1,6 +1,6 @@
 // src/components/categories/CategoryGrid.tsx
 import { useState, useEffect, useRef } from 'react';
-import { Edit2, Trash2, Home } from 'lucide-react';
+import { Home } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { ICON_MAP } from '../../utils/iconMap';
 import type { Category, Bucket } from '../../types';
@@ -58,7 +58,7 @@ interface CategoryCardProps {
   onDelete: (category: Category) => void;
 }
 
-const CategoryCard = ({ category, stats, onEdit, onDelete }: CategoryCardProps) => {
+const CategoryCard = ({ category, stats, onEdit }: CategoryCardProps) => {
   const { formatCurrency, currency } = useTheme();
   const Icon = ICON_MAP[category.icon || 'home'] || Home;
 
@@ -72,29 +72,13 @@ const CategoryCard = ({ category, stats, onEdit, onDelete }: CategoryCardProps) 
   const animatedProgress = useCountUp(Math.round(progressPercent), 1000, 400);
 
   return (
-    <div className={`${styles.categoryCard} glass-card`}>
+    <div className={`${styles.categoryCard} glass-card`} onClick={() => onEdit(category)} style={{ cursor: 'pointer' }}>
       <div className={styles.categoryCardHeader}>
         <div
           className={styles.categoryCardIcon}
           style={{ backgroundColor: `${category.color}20`, color: category.color }}
         >
           <Icon className="h-6 w-6" />
-        </div>
-        <div className={styles.categoryCardActions}>
-          <button
-            className={styles.categoryActionBtn}
-            onClick={() => onEdit(category)}
-            title="Edit category"
-          >
-            <Edit2 className="h-4 w-4" />
-          </button>
-          <button
-            className={`${styles.categoryActionBtn} ${styles.categoryActionBtnDanger}`}
-            onClick={() => onDelete(category)}
-            title="Delete category"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
         </div>
       </div>
 

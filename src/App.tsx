@@ -637,6 +637,10 @@ const BudgetingApp = () => {
           category={categoryActions.editingCategory}
           onSave={categoryActions.handleSaveCategory}
           onCancel={categoryActions.closeCategoryModal}
+          onDelete={categoryActions.editingCategory ? () => {
+            categoryActions.handleDeleteCategory(categoryActions.editingCategory!);
+            categoryActions.closeCategoryModal();
+          } : undefined}
         />
       </Modal>
 

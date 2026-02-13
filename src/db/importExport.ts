@@ -113,8 +113,13 @@ export async function importData(jsonString: string, userId: string): Promise<{ 
     });
   }
 
-  // Bulk upsert all records
+  // Clear existing user data then insert imported data
   await db.transaction('rw', [db.categories, db.buckets, db.transactions, db.monthlyIncomes], async () => {
+    await db.categories.where('userId').equals(userId).delete();
+    await db.buckets.where('userId').equals(userId).delete();
+    await db.transactions.where('userId').equals(userId).delete();
+    await db.monthlyIncomes.where('userId').equals(userId).delete();
+
     await db.categories.bulkPut(categories);
     await db.buckets.bulkPut(buckets);
     await db.transactions.bulkPut(transactions);

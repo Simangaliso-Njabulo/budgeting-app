@@ -1278,6 +1278,151 @@ body {
   color: var(--text-muted);
 }
 
+/* Mobile bucket card list — hidden on desktop, shown on mobile */
+.bucket-list-mobile {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+
+.bucket-card {
+  padding: 14px;
+  border-radius: var(--border-radius);
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  animation: fadeSlideIn 0.35s ease both;
+}
+
+.bucket-card:active {
+  transform: scale(0.98);
+}
+
+.bucket-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.bucket-card-name-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.bucket-card-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bucket-card-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.bucket-card-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bucket-card-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--accent-green);
+  transition: width 0.4s ease;
+}
+
+.bucket-card-progress-fill.on-track {
+  background: var(--accent-blue);
+}
+
+.bucket-card-progress-fill.over {
+  background: var(--accent-red);
+}
+
+.bucket-card-pct {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.bucket-card-amounts {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.bucket-card-amount-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+
+.bucket-card-amount-label {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.bucket-card-amount-value {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bucket-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--glass-border);
+}
+
+.bucket-card-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: rgba(167, 139, 250, 0.08);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bucket-card-action-btn:active {
+  background: rgba(167, 139, 250, 0.2);
+}
+
+/* Show cards on mobile, table on desktop */
+@media (max-width: 768px) {
+  .bucket-table-desktop {
+    display: none;
+  }
+  .bucket-list-mobile {
+    display: flex;
+  }
+}
+
 /* =====================
    FORM STYLES
    ===================== */

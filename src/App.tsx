@@ -724,6 +724,20 @@ const BudgetingApp = () => {
               {bucketActions.editingBucket ? "Update Bucket" : "Create Bucket"}
             </button>
           </div>
+          {bucketActions.editingBucket && (
+            <div className="form-delete-section">
+              <button
+                type="button"
+                className="btn btn-danger btn-delete-transaction"
+                onClick={() => {
+                  bucketActions.deleteBucket(bucketActions.editingBucket!.id);
+                  bucketActions.cancelBucketEdit();
+                }}
+              >
+                Delete Bucket
+              </button>
+            </div>
+          )}
         </div>
       </Modal>
 

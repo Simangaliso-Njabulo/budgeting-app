@@ -1,7 +1,5 @@
 // src/components/BucketTable.tsx
-import { useState, useRef, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { Trash2, Edit2, MoreVertical, ArrowRightLeft, ArrowDownLeft } from "lucide-react";
+import { Edit2, Trash2, ArrowRightLeft, ArrowDownLeft } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import type { Bucket, Category, Income } from "../types";
 
@@ -49,197 +47,190 @@ const BucketTable = ({
   subtitle,
 }: BucketTableProps) => {
   const { formatCurrency } = useTheme();
-  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
-  const [menuPosition, setMenuPosition] = useState<{ top: number; left: number } | null>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setOpenMenuId(null);
-        setMenuPosition(null);
-      }
-    };
-
-    if (openMenuId) {
-      document.addEventListener("mousedown", handleClickOutside);
-    }
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [openMenuId]);
-
-  const handleMenuToggle = (bucketId: string, buttonElement: HTMLButtonElement) => {
-    if (openMenuId === bucketId) {
-      setOpenMenuId(null);
-      setMenuPosition(null);
-    } else {
-      const rect = buttonElement.getBoundingClientRect();
-      setMenuPosition({
-        top: rect.bottom + 4,
-        left: rect.right - 180, // 180px is min-width of dropdown
-      });
-      setOpenMenuId(bucketId);
-    }
-  };
 
   return (
-  <div className="data-table-container">
-    <div className="data-table-header">
-      <div className="data-table-title-section">
-        <h2 className="data-table-title">{title}</h2>
-        {subtitle && <p className="data-table-subtitle">{subtitle}</p>}
+    <div className="data-table-container">
+      <div className="data-table-header">
+        <div className="data-table-title-section">
+          <h2 className="data-table-title">{title}</h2>
+          {subtitle && <p className="data-table-subtitle">{subtitle}</p>}
+        </div>
+        <div className="data-table-count">{buckets.length} items</div>
       </div>
-      <div className="data-table-count">
-        {buckets.length} items
+
+      {/* Desktop Table */}
+      <div className="data-table-wrapper bucket-table-desktop">
+        <table className="data-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Category</th>
+              <th>Allocated</th>
+              <th>Spent</th>
+              <th>Remaining</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {buckets.map((bucket) => {
+              const category = categories.find((c) => c.id === bucket.categoryId);
+              const difference = bucket.allocated - bucket.actual;
+              const status = getStatus(bucket.allocated, bucket.actual);
+              const statusConfig = getStatusConfig(status);
+
+              return (
+                <tr key={bucket.id}>
+                  <td>
+                    <div className="cell-primary">{bucket.name}</div>
+                    <div className="cell-secondary">
+                      {((bucket.allocated / income.amount) * 100).toFixed(1)}% of income
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className="category-badge"
+                      style={{
+                        backgroundColor: `${category?.color}20`,
+                        color: category?.color,
+                        border: `1px solid ${category?.color}40`,
+                      }}
+                    >
+                      {category?.name}
+                    </span>
+                  </td>
+                  <td>
+                    <span className="cell-amount">{formatCurrency(bucket.allocated)}</span>
+                  </td>
+                  <td>
+                    <span className="cell-amount">{formatCurrency(bucket.actual)}</span>
+                  </td>
+                  <td>
+                    <span className={`cell-amount ${difference >= 0 ? "text-success" : "text-danger"}`}>
+                      {difference >= 0 ? "+" : "-"}
+                      {formatCurrency(Math.abs(difference))}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`status-badge ${statusConfig.className}`}>{statusConfig.label}</span>
+                  </td>
+                  <td>
+                    <div className="action-buttons">
+                      <button onClick={() => onEdit(bucket)} className="action-btn action-btn-edit" title="Edit">
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button onClick={() => onDelete(bucket.id)} className="action-btn action-btn-delete" title="Delete">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    </div>
 
-    <div className="data-table-wrapper">
-      <table className="data-table">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Category</th>
-            <th>Allocated</th>
-            <th>Spent</th>
-            <th>Remaining</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {buckets.map((bucket) => {
-            const category = categories.find((c) => c.id === bucket.categoryId);
-            const difference = bucket.allocated - bucket.actual;
-            const status = getStatus(bucket.allocated, bucket.actual);
-            const statusConfig = getStatusConfig(status);
+      {/* Mobile Card List */}
+      <div className="bucket-list-mobile">
+        {buckets.map((bucket, index) => {
+          const category = categories.find((c) => c.id === bucket.categoryId);
+          const difference = bucket.allocated - bucket.actual;
+          const status = getStatus(bucket.allocated, bucket.actual);
+          const statusConfig = getStatusConfig(status);
+          const pct = income.amount > 0 ? ((bucket.allocated / income.amount) * 100).toFixed(1) : "0";
+          const spentPct = bucket.allocated > 0 ? Math.min((bucket.actual / bucket.allocated) * 100, 100) : 0;
 
-            return (
-              <tr key={bucket.id}>
-                <td>
-                  <div className="cell-primary">{bucket.name}</div>
-                  <div className="cell-secondary">
-                    {((bucket.allocated / income.amount) * 100).toFixed(1)}% of income
-                  </div>
-                </td>
-                <td>
+          return (
+            <div
+              key={bucket.id}
+              className="bucket-card glass-card"
+              style={{ animationDelay: `${index * 60}ms` }}
+              onClick={() => onEdit(bucket)}
+            >
+              {/* Top row: name + status */}
+              <div className="bucket-card-header">
+                <div className="bucket-card-name-section">
+                  <span className="bucket-card-name">{bucket.name}</span>
                   <span
                     className="category-badge"
                     style={{
                       backgroundColor: `${category?.color}20`,
                       color: category?.color,
-                      border: `1px solid ${category?.color}40`
+                      border: `1px solid ${category?.color}40`,
+                      fontSize: "0.65rem",
+                      padding: "2px 6px",
                     }}
                   >
                     {category?.name}
                   </span>
-                </td>
-                <td>
-                  <span className="cell-amount">{formatCurrency(bucket.allocated)}</span>
-                </td>
-                <td>
-                  <span className="cell-amount">{formatCurrency(bucket.actual)}</span>
-                </td>
-                <td>
-                  <span className={`cell-amount ${difference >= 0 ? "text-success" : "text-danger"}`}>
-                    {difference >= 0 ? "+" : "-"}{formatCurrency(Math.abs(difference))}
-                  </span>
-                </td>
-                <td>
-                  <span className={`status-badge ${statusConfig.className}`}>
-                    {statusConfig.label}
-                  </span>
-                </td>
-                <td>
-                  <div className="action-buttons">
-                    <button
-                      onClick={() => onEdit(bucket)}
-                      className="action-btn action-btn-edit"
-                      title="Edit"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => onDelete(bucket.id)}
-                      className="action-btn action-btn-delete"
-                      title="Delete"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
-                    {(onTransferTo || onReceiveFrom) && (
-                      <div className="action-menu-container">
-                        <button
-                          ref={(el) => {
-                            if (el) buttonRefs.current.set(bucket.id, el);
-                          }}
-                          onClick={(e) => handleMenuToggle(bucket.id, e.currentTarget)}
-                          className="action-btn action-btn-more"
-                          title="More options"
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </button>
-                        {openMenuId === bucket.id && menuPosition && createPortal(
-                          <div
-                            ref={menuRef}
-                            className="action-dropdown-portal"
-                            style={{
-                              position: 'fixed',
-                              top: menuPosition.top,
-                              left: menuPosition.left,
-                            }}
-                            onClick={(e) => e.stopPropagation()}
-                            onMouseDown={(e) => e.stopPropagation()}
-                          >
-                            {onTransferTo && (
-                              <button
-                                type="button"
-                                className="dropdown-item"
-                                onClick={() => {
-                                  setOpenMenuId(null);
-                                  setMenuPosition(null);
-                                  onTransferTo(bucket);
-                                }}
-                              >
-                                <ArrowRightLeft className="h-4 w-4" />
-                                <span>Transfer to...</span>
-                              </button>
-                            )}
-                            {onReceiveFrom && (
-                              <button
-                                type="button"
-                                className="dropdown-item"
-                                onClick={() => {
-                                  setOpenMenuId(null);
-                                  setMenuPosition(null);
-                                  onReceiveFrom(bucket);
-                                }}
-                              >
-                                <ArrowDownLeft className="h-4 w-4" />
-                                <span>Receive from...</span>
-                              </button>
-                            )}
-                          </div>,
-                          document.body
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+                </div>
+                <span className={`status-badge ${statusConfig.className}`} style={{ fontSize: "0.65rem", padding: "2px 8px" }}>
+                  {statusConfig.label}
+                </span>
+              </div>
 
-    {/* Table Footer */}
-    <div className="data-table-footer">
-      <div className="table-pagination">
-        <span className="pagination-info">Showing {buckets.length} of {buckets.length} entries</span>
+              {/* Progress bar */}
+              <div className="bucket-card-progress">
+                <div className="bucket-card-progress-bar">
+                  <div
+                    className={`bucket-card-progress-fill ${status === "over" ? "over" : status === "on-track" ? "on-track" : ""}`}
+                    style={{ width: `${spentPct}%` }}
+                  />
+                </div>
+                <span className="bucket-card-pct">{pct}% of income</span>
+              </div>
+
+              {/* Bottom row: amounts */}
+              <div className="bucket-card-amounts">
+                <div className="bucket-card-amount-item">
+                  <span className="bucket-card-amount-label">Allocated</span>
+                  <span className="bucket-card-amount-value">{formatCurrency(bucket.allocated)}</span>
+                </div>
+                <div className="bucket-card-amount-item">
+                  <span className="bucket-card-amount-label">Spent</span>
+                  <span className="bucket-card-amount-value">{formatCurrency(bucket.actual)}</span>
+                </div>
+                <div className="bucket-card-amount-item">
+                  <span className="bucket-card-amount-label">Remaining</span>
+                  <span className={`bucket-card-amount-value ${difference >= 0 ? "text-success" : "text-danger"}`}>
+                    {difference >= 0 ? "+" : "-"}
+                    {formatCurrency(Math.abs(difference))}
+                  </span>
+                </div>
+              </div>
+
+              {/* Quick actions row — stop click propagation so tapping these doesn't open modal */}
+              {(onTransferTo || onReceiveFrom) && (
+                <div className="bucket-card-actions" onClick={(e) => e.stopPropagation()}>
+                  {onTransferTo && (
+                    <button className="bucket-card-action-btn" onClick={() => onTransferTo(bucket)}>
+                      <ArrowRightLeft className="h-4 w-4" />
+                      <span>Transfer</span>
+                    </button>
+                  )}
+                  {onReceiveFrom && (
+                    <button className="bucket-card-action-btn" onClick={() => onReceiveFrom(bucket)}>
+                      <ArrowDownLeft className="h-4 w-4" />
+                      <span>Receive</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Table Footer */}
+      <div className="data-table-footer">
+        <div className="table-pagination">
+          <span className="pagination-info">
+            Showing {buckets.length} of {buckets.length} entries
+          </span>
+        </div>
       </div>
     </div>
-  </div>
   );
 };
 

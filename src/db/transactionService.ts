@@ -1,4 +1,5 @@
 import { db, type DbTransaction } from './database';
+import { parseLocalDate, toLocalMidnightEnd } from '../utils/helpers';
 import type { Transaction } from '../types';
 
 function toTransaction(tx: DbTransaction): Transaction {
@@ -48,7 +49,7 @@ export const transactionService = {
       description: data.description,
       amount: data.amount,
       type: data.type as 'income' | 'expense',
-      date: new Date(data.date + 'T00:00:00'),
+      date: parseLocalDate(data.date),
       notes: data.notes,
       isRecurring: data.isRecurring || false,
       recurringInterval: data.recurringInterval,
@@ -75,9 +76,9 @@ export const transactionService = {
       ...data,
       updatedAt: new Date(),
     };
-    // Convert date string to Date object if present
+    // Convert date string to local Date object if present
     if (data.date) {
-      updateData.date = new Date(data.date + 'T00:00:00');
+      updateData.date = parseLocalDate(data.date);
     }
     await db.transactions.update(id, updateData);
     const record = await db.transactions.get(id);
@@ -98,11 +99,11 @@ export const transactionService = {
     let records = await collection.toArray();
 
     if (startDate) {
-      const start = new Date(startDate + 'T00:00:00');
+      const start = parseLocalDate(startDate);
       records = records.filter((tx) => tx.date >= start);
     }
     if (endDate) {
-      const end = new Date(endDate + 'T23:59:59');
+      const end = toLocalMidnightEnd(endDate);
       records = records.filter((tx) => tx.date <= end);
     }
 

@@ -1,6 +1,7 @@
 // src/components/dashboard/SpendingTrend.tsx
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useTheme } from '../../context/ThemeContext';
+import { toLocalDateString, getTxDateString } from '../../utils/helpers';
 import type { Transaction } from '../../types';
 
 interface SpendingTrendProps {
@@ -20,7 +21,7 @@ const SpendingTrend = ({ transactions, days = 7 }: SpendingTrendProps) => {
       const date = new Date(today);
       date.setDate(date.getDate() - i);
       result.push({
-        date: date.toISOString().split('T')[0],
+        date: toLocalDateString(date),
         label: date.toLocaleDateString('en-US', { weekday: 'short' }),
         fullDate: date,
       });
@@ -33,7 +34,7 @@ const SpendingTrend = ({ transactions, days = 7 }: SpendingTrendProps) => {
   // Calculate spending per day
   const chartData = daysList.map(day => {
     const dayTransactions = transactions.filter(t => {
-      const tDate = new Date(t.date).toISOString().split('T')[0];
+      const tDate = getTxDateString(t.date);
       return tDate === day.date && t.type === 'expense';
     });
 

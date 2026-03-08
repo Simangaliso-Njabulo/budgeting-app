@@ -16,7 +16,8 @@
     "test:l2": "vitest run tests/L2-IntegrationTests",
     "test:l3": "npx playwright test --config tests/L3-E2ETests/playwright.config.ts",
     "test:frontend": "vitest run",
-    "test:all": "npm run test:frontend"
+    "test:all": "npm run test:frontend",
+    "deploy": "npm run build && gh-pages -d dist --repo https://github.com/Simangaliso-Njabulo/budgeting-app.git --branch main --dotfiles"
   },
   "dependencies": {
     "@types/styled-jsx": "^2.2.9",
@@ -43,6 +44,7 @@
     "eslint": "^9.33.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
+    "gh-pages": "^6.3.0",
     "globals": "^16.3.0",
     "jsdom": "^27.4.0",
     "postcss": "^8.5.6",

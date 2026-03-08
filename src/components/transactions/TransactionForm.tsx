@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Calendar } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
+import { toLocalDateString, parseLocalDate } from '../../utils/helpers';
 import type { Transaction, Bucket, NewTransactionForm } from '../../types';
 
 interface TransactionFormProps {
@@ -34,13 +35,17 @@ const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, on
 
   useEffect(() => {
     if (transaction) {
+      const txDate = transaction.date;
+      const year = txDate.getFullYear();
+      const month = txDate.getMonth() + 1;
+      const day = txDate.getDate();
       setForm({
         description: transaction.description,
         amount: transaction.amount,
         type: transaction.type,
         categoryId: transaction.categoryId,
         bucketId: transaction.bucketId,
-        date: new Date(transaction.date),
+        date: new Date(year, month - 1, day),
         notes: transaction.notes || '',
       });
       setAmountDisplay(transaction.amount.toString());
@@ -227,8 +232,8 @@ const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, on
           <input
             type="date"
             className="form-input date-input"
-            value={form.date.toISOString().split('T')[0]}
-            onChange={(e) => setForm({ ...form, date: new Date(e.target.value) })}
+            value={toLocalDateString(form.date)}
+            onChange={(e) => setForm({ ...form, date: parseLocalDate(e.target.value) })}
           />
         </div>
         <div className="date-quick-options">
@@ -240,7 +245,7 @@ const TransactionForm = ({ transaction, buckets, onSave, onSaveAndAddAnother, on
           ].map(({ label, days }) => {
             const d = new Date();
             d.setDate(d.getDate() - days);
-            const isSelected = form.date.toISOString().split('T')[0] === d.toISOString().split('T')[0];
+            const isSelected = toLocalDateString(form.date) === toLocalDateString(d);
             return (
               <button
                 key={days}

@@ -2,6 +2,28 @@
 
 import type { Transaction, Bucket, Category } from '../types';
 
+export function toLocalDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+export function parseLocalDate(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function toLocalMidnightEnd(dateStr: string): Date {
+  const [year, month, day] = dateStr.split('-').map(Number);
+  return new Date(year, month - 1, day, 23, 59, 59, 999);
+}
+
+export function getTxDateString(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  return toLocalDateString(d);
+}
+
 /**
  * Calculate total income from transactions
  */
@@ -122,7 +144,8 @@ export function groupTransactionsByDate(
   const grouped = new Map<string, Transaction[]>();
 
   transactions.forEach(tx => {
-    const dateKey = new Date(tx.date).toISOString().split('T')[0];
+    const txDate = tx.date instanceof Date ? tx.date : new Date(tx.date);
+    const dateKey = toLocalDateString(txDate);
     const existing = grouped.get(dateKey) || [];
     grouped.set(dateKey, [...existing, tx]);
   });
@@ -203,7 +226,7 @@ export function calculateSpendingTrend(
       .reduce((sum, t) => sum + t.amount, 0);
 
     result.push({
-      date: date.toISOString().split('T')[0],
+      date: toLocalDateString(date),
       amount: totalSpent,
     });
   }

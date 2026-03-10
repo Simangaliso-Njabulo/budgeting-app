@@ -765,13 +765,13 @@ const BudgetingApp = () => {
                 <>
                   Transferring <strong>from</strong>{" "}
                   <span style={{ color: "#a78bfa" }}>{bucketActions.transferContextBucket.name}</span>{" "}
-                  ({formatCurrency(bucketActions.transferContextBucket.allocated)} allocated)
+                  ({formatCurrency(bucketActions.transferContextBucket.allocated - bucketActions.transferContextBucket.actual)} available)
                 </>
               ) : (
                 <>
                   Receiving <strong>into</strong>{" "}
                   <span style={{ color: "#a78bfa" }}>{bucketActions.transferContextBucket.name}</span>{" "}
-                  ({formatCurrency(bucketActions.transferContextBucket.allocated)} allocated)
+                  ({formatCurrency(bucketActions.transferContextBucket.allocated - bucketActions.transferContextBucket.actual)} available)
                 </>
               )}
             </div>
@@ -790,7 +790,7 @@ const BudgetingApp = () => {
                   .filter((b) => b.id !== bucketActions.transfer.toBucketId)
                   .map((bucket) => (
                     <option key={bucket.id} value={bucket.id}>
-                      {bucket.name} ({formatCurrency(bucket.allocated)} allocated)
+                      {bucket.name} ({formatCurrency(bucket.allocated - bucket.actual)} available)
                     </option>
                   ))}
               </select>
@@ -810,7 +810,7 @@ const BudgetingApp = () => {
                   .filter((b) => b.id !== bucketActions.transfer.fromBucketId)
                   .map((bucket) => (
                     <option key={bucket.id} value={bucket.id}>
-                      {bucket.name} ({formatCurrency(bucket.allocated)} allocated)
+                      {bucket.name} ({formatCurrency(bucket.allocated - bucket.actual)} available)
                     </option>
                   ))}
               </select>
@@ -827,25 +827,59 @@ const BudgetingApp = () => {
               onChange={(e) => bucketActions.setTransfer({ ...bucketActions.transfer, amount: Number(e.target.value) })}
             />
             {bucketActions.transfer.fromBucketId && (
-              <div style={{ marginTop: "0.5rem", display: "flex", alignItems: "center", gap: "0.75rem" }}>
+              <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <small style={{ color: "var(--text-muted)" }}>
+                    Available: {formatCurrency((buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.allocated || 0) - (buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.actual || 0))}
+                  </small>
+                  <button
+                    type="button"
+                    style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem", background: "rgba(110, 231, 183, 0.15)", border: "1px solid rgba(110, 231, 183, 0.3)", borderRadius: "0.25rem", color: "#6ee7b7", cursor: "pointer", transition: "all 0.2s ease" }}
+                    onClick={() => {
+                      const fromBucket = buckets.find((b) => b.id === bucketActions.transfer.fromBucketId);
+                      if (fromBucket) {
+                        bucketActions.setTransfer({ ...bucketActions.transfer, amount: fromBucket.allocated - fromBucket.actual });
+                      }
+                    }}
+                  >
+                    Transfer All
+                  </button>
+                </div>
+                {bucketActions.transfer.amount === 0 && (
+                  <small style={{ color: "#f87171" }}>Please enter an amount greater than 0</small>
+                )}
+                {bucketActions.transfer.amount < 0 && (
+                  <small style={{ color: "#f87171" }}>Amount must be greater than 0</small>
+                )}
+                {bucketActions.transfer.amount > 0 && bucketActions.transfer.amount > ((buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.allocated || 0) - (buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.actual || 0)) && (
+                  <small style={{ color: "#f87171" }}>Amount exceeds available balance</small>
+                )}
+              </div>
+            )}
+            {bucketActions.transferMode === "from" && !bucketActions.transfer.fromBucketId && (
+              <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
                 <small style={{ color: "var(--text-muted)" }}>
-                  Available: {formatCurrency(buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.allocated || 0)}
+                  Available: {formatCurrency((buckets.find((b) => b.id === bucketActions.transfer.toBucketId)?.allocated || 0) - (buckets.find((b) => b.id === bucketActions.transfer.toBucketId)?.actual || 0))}
                 </small>
-                <button
-                  type="button"
-                  style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem", background: "rgba(110, 231, 183, 0.15)", border: "1px solid rgba(110, 231, 183, 0.3)", borderRadius: "0.25rem", color: "#6ee7b7", cursor: "pointer", transition: "all 0.2s ease" }}
-                  onClick={() => {
-                    const fromBucket = buckets.find((b) => b.id === bucketActions.transfer.fromBucketId);
-                    if (fromBucket) {
-                      bucketActions.setTransfer({ ...bucketActions.transfer, amount: fromBucket.allocated });
-                    }
-                  }}
-                >
-                  Transfer All
-                </button>
+                {bucketActions.transfer.amount === 0 && (
+                  <small style={{ color: "#f87171" }}>Please enter an amount greater than 0</small>
+                )}
+                {bucketActions.transfer.amount < 0 && (
+                  <small style={{ color: "#f87171" }}>Amount must be greater than 0</small>
+                )}
               </div>
             )}
           </div>
+          {bucketActions.transferMode !== "to" && !bucketActions.transfer.fromBucketId && bucketActions.transfer.toBucketId && (
+            <small style={{ color: "#f87171", marginTop: "0.5rem", display: "block" }}>
+              Please select a source bucket
+            </small>
+          )}
+          {bucketActions.transferMode !== "from" && !bucketActions.transfer.toBucketId && bucketActions.transfer.fromBucketId && (
+            <small style={{ color: "#f87171", marginTop: "0.5rem", display: "block" }}>
+              Please select a destination bucket
+            </small>
+          )}
           <div className="form-actions">
             <button type="button" className="btn btn-secondary" onClick={bucketActions.closeTransferModal}>
               Cancel
@@ -854,7 +888,12 @@ const BudgetingApp = () => {
               type="button"
               className="btn btn-primary"
               onClick={bucketActions.handleTransfer}
-              disabled={!bucketActions.transfer.fromBucketId || !bucketActions.transfer.toBucketId || bucketActions.transfer.amount <= 0}
+              disabled={
+                !bucketActions.transfer.fromBucketId ||
+                !bucketActions.transfer.toBucketId ||
+                bucketActions.transfer.amount <= 0 ||
+                (!!bucketActions.transfer.fromBucketId && bucketActions.transfer.amount > ((buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.allocated || 0) - (buckets.find((b) => b.id === bucketActions.transfer.fromBucketId)?.actual || 0)))
+              }
             >
               Transfer
             </button>

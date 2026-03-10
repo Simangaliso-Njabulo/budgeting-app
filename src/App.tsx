@@ -842,7 +842,7 @@ const BudgetingApp = () => {
                       }
                     }}
                   >
-                    Transfer All
+                    {bucketActions.transferMode === "from" ? "Receive All" : "Transfer All"}
                   </button>
                 </div>
                 {bucketActions.transfer.amount === 0 && (
@@ -858,9 +858,23 @@ const BudgetingApp = () => {
             )}
             {bucketActions.transferMode === "from" && !bucketActions.transfer.fromBucketId && (
               <div style={{ marginTop: "0.5rem", display: "flex", flexDirection: "column", gap: "0.25rem" }}>
-                <small style={{ color: "var(--text-muted)" }}>
-                  Available: {formatCurrency((buckets.find((b) => b.id === bucketActions.transfer.toBucketId)?.allocated || 0) - (buckets.find((b) => b.id === bucketActions.transfer.toBucketId)?.actual || 0))}
-                </small>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <small style={{ color: "var(--text-muted)" }}>
+                    Available: {formatCurrency((buckets.find((b) => b.id === bucketActions.transfer.toBucketId)?.allocated || 0) - (buckets.find((b) => b.id === bucketActions.transfer.toBucketId)?.actual || 0))}
+                  </small>
+                  <button
+                    type="button"
+                    style={{ padding: "0.25rem 0.5rem", fontSize: "0.75rem", background: "rgba(110, 231, 183, 0.15)", border: "1px solid rgba(110, 231, 183, 0.3)", borderRadius: "0.25rem", color: "#6ee7b7", cursor: "pointer", transition: "all 0.2s ease" }}
+                    onClick={() => {
+                      const toBucket = buckets.find((b) => b.id === bucketActions.transfer.toBucketId);
+                      if (toBucket) {
+                        bucketActions.setTransfer({ ...bucketActions.transfer, amount: toBucket.allocated - toBucket.actual });
+                      }
+                    }}
+                  >
+                    Receive All
+                  </button>
+                </div>
                 {bucketActions.transfer.amount === 0 && (
                   <small style={{ color: "#f87171" }}>Please enter an amount greater than 0</small>
                 )}

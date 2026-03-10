@@ -3,8 +3,8 @@
 > **Build verification (latest):** TypeScript type-check passed (0 errors). Vite production build succeeded.
 
 ## Summary
-- **Total Issues:** 21
-- **Fixed:** 21
+- **Total Issues:** 22
+- **Fixed:** 22
 - **Open:** 0
 
 ## How to Use This Index
@@ -44,6 +44,7 @@
 | 019 | Recent Transactions should scroll to top after saving | ✅ Fixed | [019-recent-tx-scroll-to-top.md](019-recent-tx-scroll-to-top.md) |
 | 020 | Pages should scroll to top on navigation; app should start at dashboard after login | ✅ Fixed | [020-navigation-scroll-dashboard.md](020-navigation-scroll-dashboard.md) |
 | 021 | Bucket page — status filter and category totals when filtering | ✅ Fixed | [021-bucket-status-filter-category-totals.md](021-bucket-status-filter-category-totals.md) |
+| 024 | Dashboard StatCard Available Balance not matching running balance | ✅ Fixed | [024-dashboard-statcard-available-balance.md](024-dashboard-statcard-available-balance.md) |
 
 ---
 
@@ -51,8 +52,8 @@
 
 **Search by keyword:**
 - "cursor" → finds issue 002
-- "balance" → finds issues 004, 009, 010, 012
-- "dashboard" → finds issues 001, 014, 020
+- "balance" → finds issues 004, 009, 010, 012, 024
+- "dashboard" → finds issues 001, 014, 020, 024
 - "transaction" → finds issues 003, 004, 005, 006, 007, 009, 011, 013, 014, 018, 019
 - "decimal" → finds issue 018
 - "trends" → finds issue 018
@@ -69,7 +70,7 @@
 **Search by component:**
 - "Recent Transactions" → issues 003, 004, 005, 019
 - "TransactionList" → issues 009, 010, 011, 012
-- "StatCard" → issue 008
+- "StatCard" → issues 008, 024
 - "Buckets" → issue 021
 - "FilterBar" → issue 021
 - "category" → issue 021

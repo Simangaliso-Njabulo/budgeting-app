@@ -94,7 +94,8 @@ const BudgetingApp = () => {
     recalculateBucketSpending,
     totalAllocated,
     periodTransactions,
-    totalSpent,
+    periodSpent,
+    periodIncome,
     remaining,
     activeCategories,
   } = budgetData;
@@ -247,8 +248,8 @@ const BudgetingApp = () => {
               <div className="dashboard-top-cards">
                 <StatCard
                   title="Total Spent"
-                  value={totalSpent}
-                  total={income.amount}
+                  value={periodSpent}
+                  total={income.amount + periodIncome}
                   icon={Users}
                   gradient="bg-gradient-to-br from-purple-500 to-purple-600"
                   subtitle="spent this month"

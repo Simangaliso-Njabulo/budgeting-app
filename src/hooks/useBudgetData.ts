@@ -225,11 +225,17 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     return txDate >= periodStart && txDate <= periodEnd;
   });
 
+  // Period income from transactions
+  const periodIncome = periodTransactions
+    .filter((tx) => tx.type === 'income')
+    .reduce((sum, tx) => sum + tx.amount, 0);
+
+  // Total spent from period transactions
   const periodSpent = periodTransactions
     .filter((tx) => tx.type === 'expense')
     .reduce((sum, tx) => sum + tx.amount, 0);
 
-  const totalSpent = periodSpent;
+  // Remaining (unallocated) = Income - Allocated
   const remaining = income.amount - totalAllocated;
   const activeCategories = categories.filter((c) => !c.isDeleted);
 
@@ -259,7 +265,8 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     // Computed
     totalAllocated,
     periodTransactions,
-    totalSpent,
+    periodSpent,
+    periodIncome,
     remaining,
     activeCategories,
   };

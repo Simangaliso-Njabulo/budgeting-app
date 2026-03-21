@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { bucketService, getCurrentUserId } from '../db';
-import type { Bucket } from '../types';
+import type { Bucket, BudgetPeriod } from '../types';
 import type { ToastType } from '../components';
 
 interface UseBucketActionsOptions {
@@ -8,9 +8,10 @@ interface UseBucketActionsOptions {
   setBuckets: React.Dispatch<React.SetStateAction<Bucket[]>>;
   showToast: (message: string, type?: ToastType) => void;
   formatCurrency: (amount: number) => string;
+  selectedPeriod?: BudgetPeriod;
 }
 
-export function useBucketActions({ buckets, setBuckets, showToast }: UseBucketActionsOptions) {
+export function useBucketActions({ buckets, setBuckets, showToast, selectedPeriod }: UseBucketActionsOptions) {
   // Bucket editing state
   const [newBucket, setNewBucket] = useState({ name: '', allocated: 0, categoryId: '' });
   const [editingBucket, setEditingBucket] = useState<Bucket | undefined>();
@@ -84,10 +85,15 @@ export function useBucketActions({ buckets, setBuckets, showToast }: UseBucketAc
           );
           showToast('Bucket updated successfully!');
         } else {
+          const now = new Date();
+          const year = selectedPeriod?.year ?? now.getFullYear();
+          const month = selectedPeriod?.month ?? (now.getMonth() + 1);
           const bucket = await bucketService.create(userId, {
             name: newBucket.name,
             allocated: newBucket.allocated,
             categoryId: newBucket.categoryId || undefined,
+            year,
+            month,
           });
           setBuckets([...buckets, { ...bucket, actual: 0 }]);
           showToast('Bucket created successfully!');

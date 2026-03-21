@@ -33,6 +33,8 @@ export interface DbCategory {
 export interface DbBucket {
   id: string;
   userId: string;
+  year: number;
+  month: number;
   categoryId?: string;
   name: string;
   allocated: number;
@@ -81,10 +83,10 @@ class BudgetDatabase extends Dexie {
   constructor() {
     super('BudgetingApp');
 
-    this.version(1).stores({
+    this.version(2).stores({
       users: 'id, &email',
       categories: 'id, userId, name, type, isDeleted',
-      buckets: 'id, userId, categoryId, name',
+      buckets: 'id, userId, [userId+year+month], categoryId, name',
       transactions: 'id, userId, categoryId, bucketId, type, date',
       monthlyIncomes: 'id, userId, [year+month], [userId+year+month]',
     });

@@ -1,8 +1,7 @@
-import { db } from './database';
-import type { DbUser, DbCategory, DbBucket, DbTransaction, DbMonthlyIncome } from './database';
+import { db, type DbBucket, type DbUser, type DbCategory, type DbTransaction, type DbMonthlyIncome } from './database';
 
 interface ExportData {
-  version: 1;
+  version: 2;
   exportedAt: string;
   settings: Omit<DbUser, 'passwordHash'>;
   categories: DbCategory[];
@@ -29,7 +28,7 @@ export async function exportAllData(userId: string): Promise<string> {
   const { passwordHash: _, ...settings } = user;
 
   const data: ExportData = {
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     settings,
     categories,
@@ -58,14 +57,14 @@ export async function downloadExport(userId: string): Promise<void> {
 }
 
 /**
- * Import data from a JSON string. Merges into the current user's data.
+ * Import data from a JSON string. Data is assumed to be in correct format (version 2).
  * Existing records with the same ID will be overwritten.
  */
 export async function importData(jsonString: string, userId: string): Promise<{ categories: number; buckets: number; transactions: number; monthlyIncomes: number }> {
   const data = JSON.parse(jsonString) as ExportData;
 
-  if (data.version !== 1) {
-    throw new Error(`Unsupported export version: ${data.version}`);
+  if (data.version !== 2) {
+    throw new Error(`Unsupported export version: ${data.version}. Please export data from the updated app first.`);
   }
 
   // Re-assign userId to the current user for all records

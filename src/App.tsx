@@ -136,6 +136,7 @@ const BudgetingApp = () => {
     setBuckets,
     showToast,
     formatCurrency,
+    selectedPeriod: budgetData.selectedPeriod,
   });
 
   // Category CRUD
@@ -330,6 +331,15 @@ const BudgetingApp = () => {
                 <h1 className="page-title">Buckets</h1>
                 <p className="page-subtitle">Manage your budget buckets and allocations</p>
               </div>
+
+              <MonthSelector
+                year={selectedPeriod.year}
+                month={selectedPeriod.month}
+                onChange={handlePeriodChange}
+                payDate={payDate}
+                income={income}
+                onUpdateIncome={handleUpdateIncome}
+              />
 
               {/* Global budget summary - shown when no category filter */}
               {!nav.categoryFilter && (

@@ -20,6 +20,8 @@ export interface Income {
 // Bucket (budget allocation)
 export interface Bucket {
   id: string;
+  year: number;
+  month: number;
   name: string;
   allocated: number;
   actual: number;

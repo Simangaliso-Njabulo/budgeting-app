@@ -4,6 +4,8 @@ import type { Bucket } from '../types';
 function toBucket(b: DbBucket): Bucket {
   return {
     id: b.id,
+    year: b.year,
+    month: b.month,
     name: b.name,
     allocated: b.allocated,
     actual: 0, // computed from transactions in useBudgetData
@@ -16,22 +18,33 @@ function toBucket(b: DbBucket): Bucket {
 }
 
 export const bucketService = {
+  /**
+   * Get buckets for a specific month.
+   */
+  async getForMonth(userId: string, year: number, month: number): Promise<Bucket[]> {
+    const records = await db.buckets.where('userId').equals(userId).toArray();
+    const filtered = records.filter(r => r.year === year && r.month === month);
+    return filtered.map(toBucket);
+  },
+
+  /**
+   * Get all buckets for a user (used for backward compatibility).
+   */
   async getAll(userId: string): Promise<Bucket[]> {
-    const records = await db.buckets
-      .where('userId')
-      .equals(userId)
-      .toArray();
+    const records = await db.buckets.where('userId').equals(userId).toArray();
     return records.map(toBucket);
   },
 
   async create(
     userId: string,
-    data: { name: string; allocated: number; categoryId?: string }
+    data: { name: string; allocated: number; categoryId?: string; year: number; month: number }
   ): Promise<Bucket> {
     const now = new Date();
     const record: DbBucket = {
       id: crypto.randomUUID(),
       userId,
+      year: data.year,
+      month: data.month,
       categoryId: data.categoryId || undefined,
       name: data.name,
       allocated: data.allocated,

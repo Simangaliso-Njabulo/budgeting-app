@@ -112,10 +112,52 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
   const handlePeriodChange = useCallback(
     async (year: number, month: number) => {
+      const userId = getCurrentUserId();
       setSelectedPeriod({ year, month });
+
+      if (!userId) return;
+
       await fetchMonthlyIncome(year, month);
+
+      // Get buckets for this month
+      const newBuckets = await bucketService.getForMonth(userId, year, month);
+      
+      // Recalculate bucket actuals from period transactions
+      const periodStart = getPayCycleStart({ year, month }, payDate);
+      const periodEnd = getPayCycleEnd({ year, month }, payDate);
+      const periodTxs = transactions.filter((tx) => {
+        const d = new Date(tx.date);
+        const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return txDate >= periodStart && txDate <= periodEnd;
+      });
+
+      // Calculate bucket spending
+      const bucketSpending: Record<string, number> = {};
+      periodTxs.forEach((tx: Transaction) => {
+        if (tx.bucketId && bucketSpending.hasOwnProperty(tx.bucketId)) {
+          if (tx.type === 'expense') {
+            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
+          } else if (tx.type === 'income') {
+            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
+          }
+        } else if (tx.bucketId) {
+          // Bucket exists in this month - include it
+          if (tx.type === 'expense') {
+            bucketSpending[tx.bucketId] = tx.amount;
+          } else if (tx.type === 'income') {
+            bucketSpending[tx.bucketId] = -tx.amount;
+          }
+        }
+      });
+
+      setBuckets(
+        newBuckets.map((b: Bucket) => ({
+          ...b,
+          actual: Math.max(0, bucketSpending[b.id] || 0),
+        }))
+      );
     },
-    [fetchMonthlyIncome]
+    [fetchMonthlyIncome, payDate, transactions]
   );
 
   const handleUpdateIncome = async (newIncome: Income) => {
@@ -164,7 +206,7 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       const [categoriesData, bucketsData, transactionsData, monthlyData, trendsData] =
         await Promise.all([
           categoryService.getAll(userId),
-          bucketService.getAll(userId),
+          bucketService.getForMonth(userId, currentCycle.year, currentCycle.month),
           transactionService.getAll(userId),
           monthlyIncomeService
             .get(userId, currentCycle.year, currentCycle.month, userData.monthlyIncome, userData.savingsTarget)
@@ -184,8 +226,18 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       setTrendData(trendsData);
       setCategories(categoriesData);
 
+      // Filter transactions by the selected period
+      const periodStart = getPayCycleStart(currentCycle, userPayDate);
+      const periodEnd = getPayCycleEnd(currentCycle, userPayDate);
+      const periodTransactions = transactionsData.filter((tx: Transaction) => {
+        const d = new Date(tx.date);
+        const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return txDate >= periodStart && txDate <= periodEnd;
+      });
+
+      // Calculate bucket spending from period transactions
       const bucketSpending: Record<string, number> = {};
-      transactionsData.forEach((tx: Transaction) => {
+      periodTransactions.forEach((tx: Transaction) => {
         if (tx.bucketId) {
           if (tx.type === 'expense') {
             bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;

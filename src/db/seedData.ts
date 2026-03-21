@@ -76,9 +76,13 @@ export async function seedUserData(userId: string): Promise<void> {
   });
 
   // Create buckets
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
   const bucketRecords = BUCKETS_DATA.map(([name, allocated, categoryName]) => ({
     id: crypto.randomUUID(),
     userId,
+    year: currentYear,
+    month: currentMonth,
     categoryId: categoryMap.get(categoryName) || '',
     name,
     allocated,

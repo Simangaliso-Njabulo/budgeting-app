@@ -12,7 +12,7 @@
   border: 1px solid var(--glass-border);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-lg);
-  z-index: 2000;
+  z-index: 900;
 }
 
 .toastEnter {
@@ -21,6 +21,7 @@
 
 .toastExit {
   animation: toastExit 0.3s ease forwards;
+  pointer-events: none;
 }
 
 @keyframes toastEnter {

@@ -1,5 +1,5 @@
 // src/components/transactions/TransactionList.tsx
-import { Home, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { Home, ArrowUpRight, ArrowDownRight, Trash2 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { ICON_MAP } from '../../utils/iconMap';
 import type { Transaction, Category, Bucket } from '../../types';
@@ -14,7 +14,7 @@ interface TransactionListProps {
   onDelete: (transaction: Transaction) => void;
 }
 
-const TransactionList = ({ transactions, categories, buckets, monthlyIncome, selectedPeriod, onEdit }: TransactionListProps) => {
+const TransactionList = ({ transactions, categories, buckets, monthlyIncome, selectedPeriod, onEdit, onDelete }: TransactionListProps) => {
   const { formatCurrency } = useTheme();
 
   // Compute running balance only for the selected period's transactions
@@ -148,6 +148,16 @@ const TransactionList = ({ transactions, categories, buckets, monthlyIncome, sel
                           </span>
                         )}
                       </div>
+                      <button
+                        className="transaction-item-delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDelete(transaction);
+                        }}
+                        aria-label={`Delete ${transaction.description}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 );

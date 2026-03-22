@@ -2212,6 +2212,12 @@ select option {
     font-size: 14px;
   }
 
+  .transaction-item-delete {
+    opacity: 1;
+    width: 36px;
+    height: 36px;
+  }
+
   /* Settings row mobile - compact theme/currency controls */
   .settings-row {
     flex-direction: column;
@@ -2447,7 +2453,7 @@ select option {
   border: 1px solid var(--glass-border);
   border-radius: var(--border-radius);
   box-shadow: var(--shadow-lg);
-  z-index: 2000;
+  z-index: 900;
 }
 
 .toast-enter {
@@ -2456,6 +2462,7 @@ select option {
 
 .toast-exit {
   animation: toastExit 0.3s ease forwards;
+  pointer-events: none;
 }
 
 @keyframes toastEnter {
@@ -3462,6 +3469,35 @@ select option {
 
 .transaction-item-balance.negative {
   color: var(--accent-red);
+}
+
+.transaction-item-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.transaction-item:hover .transaction-item-delete {
+  opacity: 1;
+}
+
+.transaction-item-delete:hover {
+  background: rgba(252, 165, 165, 0.15);
+  color: var(--accent-red);
+}
+
+.transaction-item-delete:active {
+  transform: scale(0.95);
 }
 
 .transaction-item-actions {

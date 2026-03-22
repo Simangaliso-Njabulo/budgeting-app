@@ -119,8 +119,8 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
       await fetchMonthlyIncome(year, month);
 
-      // Get buckets for this month
-      const newBuckets = await bucketService.getForMonth(userId, year, month);
+      // Get or create buckets for this month
+      const newBuckets = await bucketService.getOrCreateForMonth(userId, year, month);
       
       // Recalculate bucket actuals from period transactions
       const periodStart = getPayCycleStart({ year, month }, payDate);
@@ -206,7 +206,7 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       const [categoriesData, bucketsData, transactionsData, monthlyData, trendsData] =
         await Promise.all([
           categoryService.getAll(userId),
-          bucketService.getForMonth(userId, currentCycle.year, currentCycle.month),
+          bucketService.getOrCreateForMonth(userId, currentCycle.year, currentCycle.month),
           transactionService.getAll(userId),
           monthlyIncomeService
             .get(userId, currentCycle.year, currentCycle.month, userData.monthlyIncome, userData.savingsTarget)

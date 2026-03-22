@@ -1,4 +1,5 @@
 // src/components/transactions/TransactionList.tsx
+import { memo, useMemo, useCallback } from 'react';
 import { Home, ArrowUpRight, ArrowDownRight, Trash2 } from 'lucide-react';
 import { useTheme } from '../../context/ThemeContext';
 import { ICON_MAP } from '../../utils/iconMap';
@@ -14,12 +15,20 @@ interface TransactionListProps {
   onDelete: (transaction: Transaction) => void;
 }
 
-const TransactionList = ({ transactions, categories, buckets, monthlyIncome, selectedPeriod, onEdit, onDelete }: TransactionListProps) => {
+const TransactionList = memo(({ transactions, categories, buckets, monthlyIncome, selectedPeriod, onEdit, onDelete }: TransactionListProps) => {
   const { formatCurrency } = useTheme();
 
-  // Compute running balance only for the selected period's transactions
-  const balanceMap = new Map<string, number>();
-  if (monthlyIncome !== undefined && selectedPeriod) {
+  const today = useMemo(() => new Date(), []);
+  const yesterday = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d;
+  }, []);
+
+  const balanceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    if (monthlyIncome === undefined || !selectedPeriod) return map;
+    
     const periodTxs = transactions.filter((tx) => {
       const d = new Date(tx.date);
       return d.getFullYear() === selectedPeriod.year && d.getMonth() + 1 === selectedPeriod.month;
@@ -34,48 +43,58 @@ const TransactionList = ({ transactions, categories, buckets, monthlyIncome, sel
       } else {
         balance += tx.amount;
       }
-      balanceMap.set(tx.id, Math.round(balance * 100) / 100);
+      map.set(tx.id, Math.round(balance * 100) / 100);
     }
-  }
+    return map;
+  }, [transactions, monthlyIncome, selectedPeriod]);
 
-  // Group transactions by date
-  const groupedTransactions = transactions.reduce((groups, transaction) => {
-    const date = new Date(transaction.date).toLocaleDateString('en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+  const groupedTransactions = useMemo(() => {
+    const groups: Record<string, Transaction[]> = {};
+    transactions.forEach((transaction) => {
+      const date = new Date(transaction.date).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      });
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(transaction);
     });
-
-    if (!groups[date]) {
-      groups[date] = [];
-    }
-    groups[date].push(transaction);
     return groups;
-  }, {} as Record<string, Transaction[]>);
+  }, [transactions]);
 
-  // Sort dates in descending order (newest first)
-  const sortedDates = Object.keys(groupedTransactions).sort((a, b) =>
-    new Date(b).getTime() - new Date(a).getTime()
-  );
-
-  // Sort transactions within each group (newest first)
-  for (const date of sortedDates) {
-    groupedTransactions[date].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.createdAt.getTime() - a.createdAt.getTime()
+  const sortedDates = useMemo(() => {
+    return Object.keys(groupedTransactions).sort((a, b) =>
+      new Date(b).getTime() - new Date(a).getTime()
     );
-  }
+  }, [groupedTransactions]);
 
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, Category>();
+    categories.forEach(c => map.set(c.id, c));
+    return map;
+  }, [categories]);
 
-  const formatDateLabel = (dateStr: string) => {
+  const bucketMap = useMemo(() => {
+    const map = new Map<string, Bucket>();
+    buckets.forEach(b => map.set(b.id, b));
+    return map;
+  }, [buckets]);
+
+  const handleEdit = useCallback((transaction: Transaction) => onEdit(transaction), [onEdit]);
+  const handleDelete = useCallback((e: React.MouseEvent, transaction: Transaction) => {
+    e.stopPropagation();
+    onDelete(transaction);
+  }, [onDelete]);
+
+  const formatDateLabel = useCallback((dateStr: string) => {
     const date = new Date(dateStr);
     if (date.toDateString() === today.toDateString()) return 'Today';
     if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
     return dateStr;
-  };
+  }, [today, yesterday]);
 
   let cumulativeIndex = 0;
 
@@ -84,12 +103,15 @@ const TransactionList = ({ transactions, categories, buckets, monthlyIncome, sel
       {sortedDates.map((date, groupIndex) => {
         const groupStartIndex = cumulativeIndex;
         cumulativeIndex += groupedTransactions[date].length;
+        const sortedGroupTxs = [...groupedTransactions[date]].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime() || b.createdAt.getTime() - a.createdAt.getTime()
+        );
 
         return (
           <div
             key={date}
             className="transaction-group"
-            style={{ animationDelay: `${groupIndex * 150}ms` }}
+            style={{ animationDelay: `${groupIndex * 100}ms` }}
           >
             <div className="transaction-group-header">
               <span className="transaction-group-date">{formatDateLabel(date)}</span>
@@ -99,20 +121,20 @@ const TransactionList = ({ transactions, categories, buckets, monthlyIncome, sel
             </div>
 
             <div className="transaction-group-items">
-              {groupedTransactions[date].map((transaction, index) => {
-                const category = categories.find(c => c.id === transaction.categoryId);
-                const bucket = buckets.find(b => b.id === transaction.bucketId);
+              {sortedGroupTxs.map((transaction, index) => {
+                const category = transaction.categoryId ? categoryMap.get(transaction.categoryId) : undefined;
+                const bucket = transaction.bucketId ? bucketMap.get(transaction.bucketId) : undefined;
                 const isExpense = transaction.type === 'expense';
                 const Icon = ICON_MAP[category?.icon || 'home'] || Home;
                 const balance = balanceMap.get(transaction.id);
-                const itemDelay = (groupStartIndex + index) * 60 + groupIndex * 150;
+                const itemDelay = (groupStartIndex + index) * 40;
 
                 return (
                   <div
                     key={transaction.id}
                     className="transaction-item glass-card"
                     style={{ animationDelay: `${itemDelay}ms`, cursor: 'pointer' }}
-                    onClick={() => onEdit(transaction)}
+                    onClick={() => handleEdit(transaction)}
                   >
                     <div className="transaction-item-left">
                       <div
@@ -150,10 +172,7 @@ const TransactionList = ({ transactions, categories, buckets, monthlyIncome, sel
                       </div>
                       <button
                         className="transaction-item-delete"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(transaction);
-                        }}
+                        onClick={(e) => handleDelete(e, transaction)}
                         aria-label={`Delete ${transaction.description}`}
                       >
                         <Trash2 className="h-4 w-4" />
@@ -168,6 +187,8 @@ const TransactionList = ({ transactions, categories, buckets, monthlyIncome, sel
       })}
     </div>
   );
-};
+});
+
+TransactionList.displayName = 'TransactionList';
 
 export default TransactionList;

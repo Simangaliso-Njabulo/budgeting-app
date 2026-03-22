@@ -29,8 +29,13 @@
   border: none;
   border-radius: 12px;
   color: var(--text-muted);
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   min-width: 60px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .mobileNavItem:hover {

@@ -1,4 +1,5 @@
 // src/components/MobileNav.tsx
+import { memo } from 'react';
 import { LayoutDashboard, Wallet, ArrowUpDown, FolderOpen, Settings } from "lucide-react";
 import styles from './MobileNav.module.css';
 
@@ -7,15 +8,15 @@ interface MobileNavProps {
   setActiveTab: (tab: string) => void;
 }
 
-const MobileNav = ({ activeTab, setActiveTab }: MobileNavProps) => {
-  const navItems = [
-    { id: "dashboard", label: "Home", icon: LayoutDashboard },
-    { id: "buckets", label: "Buckets", icon: Wallet },
-    { id: "transactions", label: "Transactions", icon: ArrowUpDown },
-    { id: "categories", label: "Categories", icon: FolderOpen },
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+const navItems = [
+  { id: "dashboard", label: "Home", icon: LayoutDashboard },
+  { id: "buckets", label: "Buckets", icon: Wallet },
+  { id: "transactions", label: "Transactions", icon: ArrowUpDown },
+  { id: "categories", label: "Categories", icon: FolderOpen },
+  { id: "settings", label: "Settings", icon: Settings },
+] as const;
 
+const MobileNav = memo(({ activeTab, setActiveTab }: MobileNavProps) => {
   return (
     <nav className={styles.mobileNav}>
       {navItems.map((item) => {
@@ -35,6 +36,8 @@ const MobileNav = ({ activeTab, setActiveTab }: MobileNavProps) => {
       })}
     </nav>
   );
-};
+});
+
+MobileNav.displayName = 'MobileNav';
 
 export default MobileNav;

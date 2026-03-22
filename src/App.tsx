@@ -1,14 +1,20 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, lazy, Suspense, useMemo } from "react";
 import { Users, FolderOpen, Receipt } from "lucide-react";
 
-// Components
+const Login = lazy(() => import("./components/auth/Login"));
+const SignUp = lazy(() => import("./components/auth/SignUp"));
+const ForgotPassword = lazy(() => import("./components/auth/ForgotPassword"));
+
+const DonutChart = lazy(() => import("./components/DonutChart"));
+const MonthlyTrendChart = lazy(() => import("./components/dashboard/MonthlyTrendChart"));
+const SpendingTrend = lazy(() => import("./components/dashboard/SpendingTrend"));
+
 import {
   Sidebar,
   MobileNav,
   StatCard,
   BucketTable,
   FilterBar,
-  DonutChart,
   Settings,
   Modal,
   Toast,
@@ -21,12 +27,7 @@ import {
   TransactionFilters,
   TransactionSummary,
   RecentTransactions,
-  SpendingTrend,
-  MonthlyTrendChart,
   MonthSelector,
-  Login,
-  SignUp,
-  ForgotPassword,
 } from "./components";
 
 // Types
@@ -48,21 +49,22 @@ import { getCurrentPayCycle } from "./utils/payCycle";
 // Context
 import { useTheme } from "./context/ThemeContext";
 
-// Simple hook for tab navigation and bucket page filters
 function useBucketFilters(buckets: Bucket[]) {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState(""); // "over" | "within" | ""
+  const [statusFilter, setStatusFilter] = useState("");
 
-  const filteredBuckets = buckets.filter((bucket) => {
-    const matchesSearch = bucket.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = !categoryFilter || bucket.categoryId === categoryFilter;
-    const matchesStatus = !statusFilter ||
-      (statusFilter === "over" && bucket.actual > bucket.allocated) ||
-      (statusFilter === "within" && bucket.actual <= bucket.allocated);
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const filteredBuckets = useMemo(() => {
+    return buckets.filter((bucket) => {
+      const matchesSearch = bucket.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesCategory = !categoryFilter || bucket.categoryId === categoryFilter;
+      const matchesStatus = !statusFilter ||
+        (statusFilter === "over" && bucket.actual > bucket.allocated) ||
+        (statusFilter === "within" && bucket.actual <= bucket.allocated);
+      return matchesSearch && matchesCategory && matchesStatus;
+    });
+  }, [buckets, searchQuery, categoryFilter, statusFilter]);
 
   return { activeTab, setActiveTab, searchQuery, setSearchQuery, categoryFilter, setCategoryFilter, statusFilter, setStatusFilter, filteredBuckets };
 }
@@ -70,10 +72,8 @@ function useBucketFilters(buckets: Bucket[]) {
 const BudgetingApp = () => {
   const { formatCurrency } = useTheme();
 
-  // Toast notifications
   const { toast, showToast, hideToast } = useToast();
 
-  // Core budget data (state, fetching, computed values)
   const budgetData = useBudgetData({ showToast });
 
   const {
@@ -100,7 +100,6 @@ const BudgetingApp = () => {
     activeCategories,
   } = budgetData;
 
-  // Auth
   const stableFetchData = useCallback(async () => {
     await fetchData();
   }, [fetchData]);
@@ -115,22 +114,18 @@ const BudgetingApp = () => {
     },
   });
 
-  // Tab navigation and bucket filters
   const nav = useBucketFilters(buckets);
 
-  // Scroll to top when switching tabs
   useEffect(() => {
     window.scrollTo({ top: 0 });
   }, [nav.activeTab]);
 
-  // Always start at dashboard after login
   useEffect(() => {
     if (auth.isAuthenticated) {
       nav.setActiveTab("dashboard");
     }
-  }, [auth.isAuthenticated]);
+  }, [auth.isAuthenticated, nav.setActiveTab]);
 
-  // Bucket CRUD + transfers
   const bucketActions = useBucketActions({
     buckets,
     setBuckets,
@@ -139,14 +134,12 @@ const BudgetingApp = () => {
     selectedPeriod: budgetData.selectedPeriod,
   });
 
-  // Category CRUD
   const categoryActions = useCategoryActions({
     categories,
     setCategories: budgetData.setCategories,
     showToast,
   });
 
-  // Transaction CRUD + filters
   const txActions = useTransactionActions({
     transactions,
     setTransactions: budgetData.setTransactions,
@@ -156,21 +149,42 @@ const BudgetingApp = () => {
     showToast,
   });
 
-  const filteredTransactions = txActions.filterTransactions(transactions);
+  const filteredTransactions = useMemo(() => {
+    return txActions.filterTransactions(transactions);
+  }, [txActions, transactions]);
 
-  // Category data for donut chart
-  const categoryData = activeCategories.map((category) => {
-    const categoryBuckets = buckets.filter((b) => b.categoryId === category.id);
+  const categoryData = useMemo(() => {
+    return activeCategories.map((category) => {
+      const categoryBuckets = buckets.filter((b) => b.categoryId === category.id);
+      const catAllocated = categoryBuckets.reduce((sum, b) => sum + b.allocated, 0);
+      const catActual = categoryBuckets.reduce((sum, b) => sum + b.actual, 0);
+      return {
+        name: category.name,
+        allocated: catAllocated,
+        actual: catActual,
+        percentage: income.amount > 0 ? ((catAllocated / income.amount) * 100).toFixed(1) : "0",
+        color: category.color,
+      };
+    });
+  }, [activeCategories, buckets, income.amount]);
+
+  const handleViewAllTransactions = useCallback(() => {
+    nav.setActiveTab("transactions");
+  }, [nav]);
+
+  // Memoized category-specific bucket computations for buckets tab
+  const categoryBucketData = useMemo(() => {
+    const selectedCategory = nav.categoryFilter
+      ? activeCategories.find((c) => c.id === nav.categoryFilter)
+      : null;
+    const categoryBuckets = nav.categoryFilter
+      ? buckets.filter((b) => b.categoryId === nav.categoryFilter)
+      : buckets;
     const catAllocated = categoryBuckets.reduce((sum, b) => sum + b.allocated, 0);
-    const catActual = categoryBuckets.reduce((sum, b) => sum + b.actual, 0);
-    return {
-      name: category.name,
-      allocated: catAllocated,
-      actual: catActual,
-      percentage: income.amount > 0 ? ((catAllocated / income.amount) * 100).toFixed(1) : "0",
-      color: category.color,
-    };
-  });
+    const catSpent = categoryBuckets.reduce((sum, b) => sum + b.actual, 0);
+    const catRemaining = catAllocated - catSpent;
+    return { selectedCategory, categoryBuckets, catAllocated, catSpent, catRemaining };
+  }, [nav.categoryFilter, activeCategories, buckets]);
 
   // Loading state
   if (auth.isLoading && auth.isAuthenticated) {
@@ -201,18 +215,26 @@ const BudgetingApp = () => {
 
   // Auth pages
   if (!auth.isAuthenticated) {
+    const authFallback = (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh" }}>
+        <div className="spinner" />
+      </div>
+    );
+    
     if (auth.authPage === "signup") {
-      return <SignUp onSignUp={auth.handleSignUp} onNavigate={() => auth.setAuthPage("login")} />;
+      return <Suspense fallback={authFallback}><SignUp onSignUp={auth.handleSignUp} onNavigate={() => auth.setAuthPage("login")} /></Suspense>;
     }
     if (auth.authPage === "forgot") {
       return (
-        <ForgotPassword
-          onResetPassword={auth.handleForgotPassword}
-          onNavigate={() => auth.setAuthPage("login")}
-        />
+        <Suspense fallback={authFallback}>
+          <ForgotPassword
+            onResetPassword={auth.handleForgotPassword}
+            onNavigate={() => auth.setAuthPage("login")}
+          />
+        </Suspense>
       );
     }
-    return <Login onLogin={auth.handleLogin} onNavigate={(page) => auth.setAuthPage(page)} />;
+    return <Suspense fallback={authFallback}><Login onLogin={auth.handleLogin} onNavigate={(page) => auth.setAuthPage(page)} /></Suspense>;
   }
 
   return (
@@ -293,37 +315,32 @@ const BudgetingApp = () => {
               </div>
 
               <div className="dashboard-grid">
-                <DonutChart data={categoryData} unallocated={remaining} />
+                <Suspense fallback={<div className="chart-skeleton" />}>
+                  <DonutChart data={categoryData} unallocated={remaining} />
+                </Suspense>
                 <RecentTransactions
                   transactions={periodTransactions}
                   categories={categories}
-                  onViewAll={() => nav.setActiveTab("transactions")}
+                  onViewAll={handleViewAllTransactions}
                   onEdit={txActions.handleEditTransaction}
                   limit={recentTxLimit}
                   monthlyIncome={income.amount}
                 />
               </div>
 
-              {trendData.length > 0 ? (
-                <MonthlyTrendChart data={trendData} />
-              ) : (
-                <SpendingTrend transactions={periodTransactions} days={7} />
-              )}
+              <Suspense fallback={<div className="chart-skeleton" />}>
+                {trendData.length > 0 ? (
+                  <MonthlyTrendChart data={trendData} />
+                ) : (
+                  <SpendingTrend transactions={periodTransactions} days={7} />
+                )}
+              </Suspense>
             </div>
           )}
 
           {/* Buckets Tab */}
           {nav.activeTab === "buckets" && (() => {
-            // Compute category-specific totals when filtering by category
-            const selectedCategory = nav.categoryFilter
-              ? activeCategories.find((c) => c.id === nav.categoryFilter)
-              : null;
-            const categoryBuckets = nav.categoryFilter
-              ? buckets.filter((b) => b.categoryId === nav.categoryFilter)
-              : buckets;
-            const catAllocated = categoryBuckets.reduce((sum, b) => sum + b.allocated, 0);
-            const catSpent = categoryBuckets.reduce((sum, b) => sum + b.actual, 0);
-            const catRemaining = catAllocated - catSpent;
+            const { selectedCategory, catAllocated, catSpent, catRemaining } = categoryBucketData;
 
             return (
             <div className="page-content">

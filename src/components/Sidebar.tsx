@@ -1,4 +1,5 @@
 // src/components/Sidebar.tsx
+import { memo } from 'react';
 import { LayoutDashboard, Wallet, ArrowUpDown, FolderOpen, Settings, LogOut } from "lucide-react";
 import AppLogo from './common/AppLogo';
 import styles from './Sidebar.module.css';
@@ -11,24 +12,22 @@ interface SidebarProps {
   onLogout?: () => void;
 }
 
-const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "Personal Finance", onLogout }: SidebarProps) => {
-  const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-    { id: "buckets", label: "Buckets", icon: Wallet },
-    { id: "transactions", label: "Transactions", icon: ArrowUpDown },
-    { id: "categories", label: "Categories", icon: FolderOpen },
-  ];
+const navItems = [
+  { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { id: "buckets", label: "Buckets", icon: Wallet },
+  { id: "transactions", label: "Transactions", icon: ArrowUpDown },
+  { id: "categories", label: "Categories", icon: FolderOpen },
+] as const;
 
-  const bottomItems = [
-    { id: "settings", label: "Settings", icon: Settings },
-  ];
+const bottomItems = [
+  { id: "settings", label: "Settings", icon: Settings },
+] as const;
 
+const Sidebar = memo(({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "Personal Finance", onLogout }: SidebarProps) => {
   return (
     <aside className={styles.sidebar}>
-      {/* Subtle background glow */}
       <div className={styles.sidebarGlow} />
 
-      {/* Logo Section */}
       <div className={styles.sidebarHeader}>
         <div className={styles.sidebarLogo}>
           <div className={styles.logoIconContainer}>
@@ -39,7 +38,6 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
         </div>
       </div>
 
-      {/* Navigation */}
       <nav className={styles.sidebarNav}>
         <div className={styles.navSection}>
           {navItems.map((item, index) => {
@@ -50,7 +48,7 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
                 className={`${styles.navItem} ${isActive ? styles.navItemActive : ""}`}
-                style={{ animationDelay: `${index * 0.1}s` }}
+                style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <Icon className={styles.navIcon} />
                 <span className={styles.navLabel}>{item.label}</span>
@@ -60,7 +58,6 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
           })}
         </div>
 
-        {/* Bottom Section */}
         <div className={`${styles.navSection} ${styles.navSectionBottom}`}>
           {bottomItems.map((item) => {
             const Icon = item.icon;
@@ -83,6 +80,8 @@ const Sidebar = ({ activeTab, setActiveTab, appName = "BudgetPro", subtitle = "P
       </nav>
     </aside>
   );
-};
+});
+
+Sidebar.displayName = 'Sidebar';
 
 export default Sidebar;

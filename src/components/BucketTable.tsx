@@ -1,4 +1,5 @@
 // src/components/BucketTable.tsx
+import { memo, useMemo, useCallback } from 'react';
 import { Edit2, Trash2, ArrowRightLeft, ArrowDownLeft } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import type { Bucket, Category, Income } from "../types";
@@ -35,7 +36,7 @@ const getStatusConfig = (status: BucketStatus) => {
   }
 };
 
-const BucketTable = ({
+const BucketTable = memo(({
   buckets,
   categories,
   income,
@@ -48,6 +49,17 @@ const BucketTable = ({
 }: BucketTableProps) => {
   const { formatCurrency } = useTheme();
 
+  const categoryMap = useMemo(() => {
+    const map = new Map<string, Category>();
+    categories.forEach(c => map.set(c.id, c));
+    return map;
+  }, [categories]);
+
+  const handleEdit = useCallback((bucket: Bucket) => onEdit(bucket), [onEdit]);
+  const handleDelete = useCallback((id: string) => onDelete(id), [onDelete]);
+  const handleTransferTo = useCallback((bucket: Bucket) => onTransferTo?.(bucket), [onTransferTo]);
+  const handleReceiveFrom = useCallback((bucket: Bucket) => onReceiveFrom?.(bucket), [onReceiveFrom]);
+
   return (
     <div className="data-table-container">
       <div className="data-table-header">
@@ -58,7 +70,6 @@ const BucketTable = ({
         <div className="data-table-count">{buckets.length} items</div>
       </div>
 
-      {/* Desktop Table */}
       <div className="data-table-wrapper bucket-table-desktop">
         <table className="data-table">
           <thead>
@@ -74,7 +85,7 @@ const BucketTable = ({
           </thead>
           <tbody>
             {buckets.map((bucket) => {
-              const category = categories.find((c) => c.id === bucket.categoryId);
+              const category = bucket.categoryId ? categoryMap.get(bucket.categoryId) : undefined;
               const difference = bucket.allocated - bucket.actual;
               const status = getStatus(bucket.allocated, bucket.actual);
               const statusConfig = getStatusConfig(status);
@@ -84,7 +95,7 @@ const BucketTable = ({
                   <td>
                     <div className="cell-primary">{bucket.name}</div>
                     <div className="cell-secondary">
-                      {((bucket.allocated / income.amount) * 100).toFixed(1)}% of income
+                      {income.amount > 0 ? ((bucket.allocated / income.amount) * 100).toFixed(1) : "0"}% of income
                     </div>
                   </td>
                   <td>
@@ -116,10 +127,10 @@ const BucketTable = ({
                   </td>
                   <td>
                     <div className="action-buttons">
-                      <button onClick={() => onEdit(bucket)} className="action-btn action-btn-edit" title="Edit">
+                      <button onClick={() => handleEdit(bucket)} className="action-btn action-btn-edit" title="Edit">
                         <Edit2 className="h-4 w-4" />
                       </button>
-                      <button onClick={() => onDelete(bucket.id)} className="action-btn action-btn-delete" title="Delete">
+                      <button onClick={() => handleDelete(bucket.id)} className="action-btn action-btn-delete" title="Delete">
                         <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
@@ -131,10 +142,9 @@ const BucketTable = ({
         </table>
       </div>
 
-      {/* Mobile Card List */}
       <div className="bucket-list-mobile">
         {buckets.map((bucket, index) => {
-          const category = categories.find((c) => c.id === bucket.categoryId);
+          const category = bucket.categoryId ? categoryMap.get(bucket.categoryId) : undefined;
           const difference = bucket.allocated - bucket.actual;
           const status = getStatus(bucket.allocated, bucket.actual);
           const statusConfig = getStatusConfig(status);
@@ -145,10 +155,9 @@ const BucketTable = ({
             <div
               key={bucket.id}
               className="bucket-card glass-card"
-              style={{ animationDelay: `${index * 60}ms` }}
-              onClick={() => onEdit(bucket)}
+              style={{ animationDelay: `${index * 40}ms` }}
+              onClick={() => handleEdit(bucket)}
             >
-              {/* Top row: name + status */}
               <div className="bucket-card-header">
                 <div className="bucket-card-name-section">
                   <span className="bucket-card-name">{bucket.name}</span>
@@ -170,7 +179,6 @@ const BucketTable = ({
                 </span>
               </div>
 
-              {/* Progress bar */}
               <div className="bucket-card-progress">
                 <div className="bucket-card-progress-bar">
                   <div
@@ -181,7 +189,6 @@ const BucketTable = ({
                 <span className="bucket-card-pct">{pct}% of income</span>
               </div>
 
-              {/* Bottom row: amounts */}
               <div className="bucket-card-amounts">
                 <div className="bucket-card-amount-item">
                   <span className="bucket-card-amount-label">Allocated</span>
@@ -200,17 +207,16 @@ const BucketTable = ({
                 </div>
               </div>
 
-              {/* Quick actions row — stop click propagation so tapping these doesn't open modal */}
               {(onTransferTo || onReceiveFrom) && (
                 <div className="bucket-card-actions" onClick={(e) => e.stopPropagation()}>
                   {onTransferTo && (
-                    <button className="bucket-card-action-btn" onClick={() => onTransferTo(bucket)}>
+                    <button className="bucket-card-action-btn" onClick={() => handleTransferTo(bucket)}>
                       <ArrowRightLeft className="h-4 w-4" />
                       <span>Transfer</span>
                     </button>
                   )}
                   {onReceiveFrom && (
-                    <button className="bucket-card-action-btn" onClick={() => onReceiveFrom(bucket)}>
+                    <button className="bucket-card-action-btn" onClick={() => handleReceiveFrom(bucket)}>
                       <ArrowDownLeft className="h-4 w-4" />
                       <span>Receive</span>
                     </button>
@@ -222,7 +228,6 @@ const BucketTable = ({
         })}
       </div>
 
-      {/* Table Footer */}
       <div className="data-table-footer">
         <div className="table-pagination">
           <span className="pagination-info">
@@ -232,6 +237,8 @@ const BucketTable = ({
       </div>
     </div>
   );
-};
+});
+
+BucketTable.displayName = 'BucketTable';
 
 export default BucketTable;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   userService,
   getCurrentUserId,
@@ -35,10 +35,12 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
   });
   const [trendData, setTrendData] = useState<MonthlyTrendItem[]>([]);
 
-  // Recent transactions limit - responsive
   const [recentTxLimit, setRecentTxLimit] = useState(() =>
     window.innerWidth > 1024 ? 7 : 5
   );
+
+  const transactionsRef = useRef(transactions);
+  transactionsRef.current = transactions;
 
   useEffect(() => {
     const handleResize = () => {
@@ -48,7 +50,6 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Recalculate bucket spending from transactions
   const recalculateBucketSpending = useCallback(
     (txList: Transaction[], bucketList: Bucket[]): Bucket[] => {
       const bucketSpending: Record<string, number> = {};
@@ -119,33 +120,31 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
       await fetchMonthlyIncome(year, month);
 
-      // Get or create buckets for this month
       const newBuckets = await bucketService.getOrCreateForMonth(userId, year, month);
       
-      // Recalculate bucket actuals from period transactions
       const periodStart = getPayCycleStart({ year, month }, payDate);
       const periodEnd = getPayCycleEnd({ year, month }, payDate);
-      const periodTxs = transactions.filter((tx) => {
+      const periodTxs = transactionsRef.current.filter((tx) => {
         const d = new Date(tx.date);
         const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
         return txDate >= periodStart && txDate <= periodEnd;
       });
 
-      // Calculate bucket spending
       const bucketSpending: Record<string, number> = {};
       periodTxs.forEach((tx: Transaction) => {
-        if (tx.bucketId && bucketSpending.hasOwnProperty(tx.bucketId)) {
-          if (tx.type === 'expense') {
-            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
-          } else if (tx.type === 'income') {
-            bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
-          }
-        } else if (tx.bucketId) {
-          // Bucket exists in this month - include it
-          if (tx.type === 'expense') {
-            bucketSpending[tx.bucketId] = tx.amount;
-          } else if (tx.type === 'income') {
-            bucketSpending[tx.bucketId] = -tx.amount;
+        if (tx.bucketId) {
+          if (Object.hasOwn(bucketSpending, tx.bucketId)) {
+            if (tx.type === 'expense') {
+              bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
+            } else if (tx.type === 'income') {
+              bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) - tx.amount;
+            }
+          } else {
+            if (tx.type === 'expense') {
+              bucketSpending[tx.bucketId] = tx.amount;
+            } else if (tx.type === 'income') {
+              bucketSpending[tx.bucketId] = -tx.amount;
+            }
           }
         }
       });
@@ -157,10 +156,10 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
         }))
       );
     },
-    [fetchMonthlyIncome, payDate, transactions]
+    [fetchMonthlyIncome, payDate]
   );
 
-  const handleUpdateIncome = async (newIncome: Income) => {
+  const handleUpdateIncome = useCallback(async (newIncome: Income) => {
     try {
       const userId = getCurrentUserId();
       if (!userId) return;
@@ -181,9 +180,8 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     } catch {
       showToast('Failed to update income', 'error');
     }
-  };
+  }, [selectedPeriod, fetchTrends, showToast]);
 
-  // Fetch all data from IndexedDB
   const fetchData = useCallback(async () => {
     try {
       const userId = getCurrentUserId();
@@ -226,7 +224,6 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
       setTrendData(trendsData);
       setCategories(categoriesData);
 
-      // Filter transactions by the selected period
       const periodStart = getPayCycleStart(currentCycle, userPayDate);
       const periodEnd = getPayCycleEnd(currentCycle, userPayDate);
       const periodTransactions = transactionsData.filter((tx: Transaction) => {
@@ -235,7 +232,6 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
         return txDate >= periodStart && txDate <= periodEnd;
       });
 
-      // Calculate bucket spending from period transactions
       const bucketSpending: Record<string, number> = {};
       periodTransactions.forEach((tx: Transaction) => {
         if (tx.bucketId) {
@@ -264,35 +260,35 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     }
   }, [showToast]);
 
-  // Computed values
-  const totalAllocated = buckets.reduce((sum, b) => sum + b.allocated, 0);
+  const totalAllocated = useMemo(() => buckets.reduce((sum, b) => sum + b.allocated, 0), [buckets]);
 
-  const periodStart = getPayCycleStart(selectedPeriod, payDate);
-  const periodEnd = getPayCycleEnd(selectedPeriod, payDate);
+  const periodStart = useMemo(() => getPayCycleStart(selectedPeriod, payDate), [selectedPeriod, payDate]);
+  const periodEnd = useMemo(() => getPayCycleEnd(selectedPeriod, payDate), [selectedPeriod, payDate]);
 
-  const periodTransactions = transactions.filter((tx) => {
-    // Normalize to local midnight to avoid UTC vs local timezone mismatches
-    const d = new Date(tx.date);
-    const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-    return txDate >= periodStart && txDate <= periodEnd;
-  });
+  const periodTransactions = useMemo(() => {
+    return transactions.filter((tx) => {
+      const d = new Date(tx.date);
+      const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      return txDate >= periodStart && txDate <= periodEnd;
+    });
+  }, [transactions, periodStart, periodEnd]);
 
-  // Period income from transactions
-  const periodIncome = periodTransactions
-    .filter((tx) => tx.type === 'income')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  const periodIncome = useMemo(() => {
+    return periodTransactions
+      .filter((tx) => tx.type === 'income')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [periodTransactions]);
 
-  // Total spent from period transactions
-  const periodSpent = periodTransactions
-    .filter((tx) => tx.type === 'expense')
-    .reduce((sum, tx) => sum + tx.amount, 0);
+  const periodSpent = useMemo(() => {
+    return periodTransactions
+      .filter((tx) => tx.type === 'expense')
+      .reduce((sum, tx) => sum + tx.amount, 0);
+  }, [periodTransactions]);
 
-  // Remaining (unallocated) = Income - Allocated
-  const remaining = income.amount - totalAllocated;
-  const activeCategories = categories.filter((c) => !c.isDeleted);
+  const remaining = useMemo(() => income.amount - totalAllocated, [income.amount, totalAllocated]);
+  const activeCategories = useMemo(() => categories.filter((c) => !c.isDeleted), [categories]);
 
   return {
-    // State
     income,
     setIncome,
     buckets,
@@ -307,14 +303,12 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
     trendData,
     recentTxLimit,
 
-    // Functions
     fetchData,
     fetchTrends,
     handlePeriodChange,
     handleUpdateIncome,
     recalculateBucketSpending,
 
-    // Computed
     totalAllocated,
     periodTransactions,
     periodSpent,

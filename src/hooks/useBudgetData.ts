@@ -52,8 +52,15 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
 
   const recalculateBucketSpending = useCallback(
     (txList: Transaction[], bucketList: Bucket[]): Bucket[] => {
+      const periodStart = getPayCycleStart(selectedPeriod, payDate);
+      const periodEnd = getPayCycleEnd(selectedPeriod, payDate);
+      const periodTxs = txList.filter((tx) => {
+        const d = new Date(tx.date);
+        const txDate = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        return txDate >= periodStart && txDate <= periodEnd;
+      });
       const bucketSpending: Record<string, number> = {};
-      txList.forEach((tx) => {
+      periodTxs.forEach((tx) => {
         if (tx.bucketId) {
           if (tx.type === 'expense') {
             bucketSpending[tx.bucketId] = (bucketSpending[tx.bucketId] || 0) + tx.amount;
@@ -67,7 +74,7 @@ export function useBudgetData({ showToast }: UseBudgetDataOptions) {
         actual: Math.max(0, bucketSpending[b.id] || 0),
       }));
     },
-    []
+    [selectedPeriod, payDate]
   );
 
   const fetchTrends = useCallback(async () => {

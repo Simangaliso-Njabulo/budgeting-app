@@ -47,9 +47,7 @@ export function useTransactionActions({
         const updatedTx = await transactionService.update(editingTransaction.id, txData);
         setTransactions((prevTxs) => {
           const newTxs = prevTxs.map((t) => (t.id === editingTransaction.id ? updatedTx : t));
-          queueMicrotask(() => {
-            setBuckets((prevBuckets) => recalculateBucketSpending(newTxs, prevBuckets));
-          });
+          setBuckets((prevBuckets) => recalculateBucketSpending(newTxs, prevBuckets));
           return newTxs;
         });
         showToast('Transaction updated successfully!');
@@ -57,9 +55,7 @@ export function useTransactionActions({
         const newTransaction = await transactionService.create(userId, txData);
         setTransactions((prevTxs) => {
           const newTxs = [...prevTxs, newTransaction];
-          queueMicrotask(() => {
-            setBuckets((prevBuckets) => recalculateBucketSpending(newTxs, prevBuckets));
-          });
+          setBuckets((prevBuckets) => recalculateBucketSpending(newTxs, prevBuckets));
           return newTxs;
         });
         showToast('Transaction added successfully!');

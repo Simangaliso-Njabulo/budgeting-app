@@ -2108,35 +2108,76 @@ select option {
     display: none;
   }
 
-  /* Transaction filters mobile — stack vertically, full width */
+  /* Transaction filters mobile — fit without scroll */
   .transaction-filters {
+    display: flex;
     flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 12px;
+    gap: 8px;
+    padding: 10px;
   }
 
   .transaction-filters-left {
-    gap: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
   }
 
-  .transaction-filters-right {
+  .filter-icon-wrapper {
+    display: none;
+  }
+
+  .filter-dropdown,
+  .filter-date-start,
+  .filter-date-end,
+  .search-wrapper {
     width: 100%;
   }
 
-  .filter-date-range {
+  .filter-select,
+  .filter-date-input,
+  .search-input {
     width: 100%;
-    flex-wrap: wrap;
+    min-width: 0;
+    font-size: 11px;
+    padding: 6px 4px;
+  }
+
+  .filter-date-start,
+  .filter-date-end {
+    display: flex;
+    align-items: center;
+    gap: 4px;
   }
 
   .filter-date-input {
     flex: 1;
     min-width: 0;
-    font-size: 12px;
-    padding: 7px 8px;
   }
 
-  /* Transaction summary mobile layout - prevent net from being chopped */
+  .filter-date-separator {
+    font-size: 10px;
+    white-space: nowrap;
+  }
+
+  .transaction-filters-right {
+    display: none;
+  }
+
+  .search-input {
+    width: 100%;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+
+  .search-icon-external {
+    display: none;
+  }
+
+  .add-button {
+    display: none;
+  }
+
+  /* Transaction summary mobile layout */
   .transaction-summary {
     padding: 14px 16px;
   }
@@ -5189,36 +5230,6 @@ html {
   
   .page-title {
     font-size: 24px;
-  }
-}
-
-/* Mobile transaction filters - ensure no overflow */
-@media (max-width: 768px) {
-  .transaction-filters {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    flex-wrap: nowrap;
-    padding-bottom: 8px;
-  }
-  
-  .transaction-filters-left {
-    flex-wrap: nowrap;
-    min-width: max-content;
-  }
-  
-  .transaction-filters-right {
-    flex-wrap: nowrap;
-    min-width: max-content;
-  }
-  
-  /* Date range inputs - smaller on mobile */
-  .filter-date-range {
-    flex-shrink: 0;
-  }
-  
-  .filter-date-input {
-    width: 100px;
-    font-size: 11px;
   }
 }
 

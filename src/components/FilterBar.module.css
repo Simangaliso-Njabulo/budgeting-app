@@ -136,39 +136,52 @@
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-/* Mobile: stack filters so dropdowns don't overflow */
+/* Mobile: grid layout similar to transaction filters */
 @media (max-width: 768px) {
   .filterBar {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-    padding: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    padding: 10px;
   }
 
   .filterBarLeft {
-    flex-wrap: wrap;
-    gap: 8px;
+    display: contents;
+  }
+
+  .filterIconWrapper {
+    display: none;
+  }
+
+  .filterLabel {
+    display: none;
+  }
+
+  .filterDropdown {
+    width: 100%;
   }
 
   .filterSelect {
+    width: 100%;
     min-width: 0;
-    flex: 1;
-    font-size: 12px;
-    padding: 7px 28px 7px 10px;
+    font-size: 11px;
+    padding: 6px 4px;
   }
 
   .filterBarRight {
-    flex-wrap: wrap;
-    gap: 8px;
+    display: contents;
   }
 
   .searchWrapper {
     width: 100%;
+    grid-column: 1 / -1;
   }
 
   .searchInput {
     width: 100%;
-    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    padding: 6px 4px;
   }
 
   .searchIconExternal {
@@ -176,15 +189,8 @@
   }
 
   .addButton {
+    grid-column: 1 / -1;
     width: 100%;
     justify-content: center;
-  }
-
-  .filterLabel {
-    display: none;
-  }
-
-  .filterIconWrapper {
-    display: none;
   }
 }

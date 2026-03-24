@@ -1,5 +1,5 @@
 // src/components/transactions/TransactionFilters.tsx
-import { Filter, Search, Plus, Calendar } from 'lucide-react';
+import { Filter, Search, Plus } from 'lucide-react';
 import type { Category } from '../../types';
 
 interface TransactionFiltersProps {
@@ -36,7 +36,7 @@ const TransactionFilters = ({
           <Filter className="h-4 w-4" />
         </div>
 
-        {/* Category Filter */}
+        {/* Cat | Type */}
         <div className="filter-dropdown">
           <select
             value={categoryFilter}
@@ -51,8 +51,6 @@ const TransactionFilters = ({
             ))}
           </select>
         </div>
-
-        {/* Type Filter */}
         <div className="filter-dropdown">
           <select
             value={typeFilter}
@@ -65,15 +63,16 @@ const TransactionFilters = ({
           </select>
         </div>
 
-        {/* Date Range */}
-        <div className="filter-date-range">
-          <Calendar className="h-4 w-4" />
+        {/* From | To */}
+        <div className="filter-date-start">
           <input
             type="date"
             value={dateRange.start}
             onChange={(e) => onDateRangeChange({ ...dateRange, start: e.target.value })}
             className="filter-date-input"
           />
+        </div>
+        <div className="filter-date-end">
           <span className="filter-date-separator">to</span>
           <input
             type="date"
@@ -82,10 +81,8 @@ const TransactionFilters = ({
             className="filter-date-input"
           />
         </div>
-      </div>
 
-      <div className="transaction-filters-right">
-        {/* Search */}
+        {/* Search (aligned with From date) */}
         <div className="search-wrapper">
           <Search className="search-icon-external" />
           <input
@@ -96,8 +93,9 @@ const TransactionFilters = ({
             className="search-input"
           />
         </div>
+      </div>
 
-        {/* Add Button */}
+      <div className="transaction-filters-right">
         <button className="add-button" onClick={onAddClick}>
           <Plus className="h-4 w-4" />
           <span>Add Transaction</span>
